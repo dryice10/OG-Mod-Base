@@ -807,6 +807,188 @@
          )
       )
     )
+
+;;;
+;;; Custom stuff
+;;;
+
+;;    (set! edit-me (-> (the process-drawable (process-by-ename (the string (res-lump-struct e 'name structure)))) root trans))  ;;(res-lump-struct e 'name structure)
+;;    (set! edit-me (-> (the process-drawable (process-by-ename " " )) root trans))
+;;    (inspect (-> (the process-drawable (-> *level* level 0 bsp level entity data 1 entity extra process)) root trans))
+;;    (print (-> (the process-drawable (-> *level* level 0 bsp level entity data 1 entity extra process)) name))
+
+
+#|
+;; This is the other way to make a menu
+
+(debug-menu-append-item (-> *debug-menu-context* root-menu)
+  (debug-menu-make-from-template *debug-menu-context*
+    '(menu "VectorEdit"
+        (function "VMenu" #f dm-vmenu-func)
+        (float-var "Amount" 0 dm-vm-float 10 1 #t 0 20 1)
+        (function "Halve" #f dm-halve-func)
+        (menu "LED"
+          (flag "hp" #f ,(dm-lambda-boolean-flag test-bool))
+          (flag "eco" #f ,(dm-lambda-boolean-flag test-bool))
+          (flag "heat" #f ,(dm-lambda-boolean-flag test-bool))
+          )
+      )
+    )
+  )
+|#
+
+(define-extern edit-me vector)
+(define-extern vmenu-on (function none))
+(define-extern vmenu-off (function symbol))
+(define-extern add-amount float)
+
+(define switch-bool #f)
+;;thats neat, the menu text is blue/red based on the return value
+(defun dm-vmenu-func ()
+  (if switch-bool
+    (vmenu-off)
+    (vmenu-on)
+  )
+  (not! switch-bool)
+)
+
+
+(defun dm-vm-float ((arg0 symbol) (arg1 debug-menu-msg) (arg2 float) (arg3 float))
+  (when (= arg1 (debug-menu-msg press))
+    (set! add-amount (* 4096.0 arg2))
+    )
+    (* 0.00024414062 add-amount) ; 0.00024414062 inverse of 4096.0
+)
+
+(defun dm-halve-func ()
+    ;this is my workaround for getting non-int add-amount
+    ;float-var wouldn't let me use floats, yep
+    (/! add-amount 2.0)
+)
+
+
+
+(define *test-pick-menu* (the-as debug-menu #f))
+(define *test-debug-inspect* (new 'debug 'entity-debug-inspect)) ; holds the entity we selected, or #f otherwise
+
+
+;;max of 8 args to a function, so I had to chain these
+(defun printing-func3 ()
+  (format #t 
+"
+\"bsphere\": [~m, ~m, ~m, 10],
+\"lump\": {
+        \"name\":\"~s\"
+        }
+ },"
+    (-> edit-me x) (-> edit-me y) (-> edit-me z)
+    (res-lump-struct (-> *test-debug-inspect* entity) 'name structure)
+    )
+)
+
+(defun printing-func2 ()
+  (format #t 
+"
+\"quat\" : [~r ~r ~r],"   
+    (-> (the process-drawable (-> *test-debug-inspect* entity extra process)) root quat x)
+    (-> (the process-drawable (-> *test-debug-inspect* entity extra process)) root quat y)
+    (-> (the process-drawable (-> *test-debug-inspect* entity extra process)) root quat z)
+    )
+)
+
+(defun printing-func1 ()
+  (format #t 
+"
+{
+\"trans\": [~m, ~m, ~m],
+\"etype\": \"~s\",
+\"game_task\": 0,"
+    (-> edit-me x) (-> edit-me y) (-> edit-me z)
+    (-> (the entity-actor (-> *test-debug-inspect* entity)) etype)    
+    )
+)
+
+(defun printing-func ()
+  (printing-func1)
+  (printing-func2)
+  (printing-func3)
+)
+
+
+(defun jak-teleport-func ()
+  (set! (-> (target-pos 0) x) (-> edit-me x))
+  (set! (-> (target-pos 0) y) (-> edit-me y))
+  (set! (-> (target-pos 0) z) (-> edit-me z))
+)
+
+
+(defun dm-test-pick-func ((e entity) (msg debug-menu-msg))
+  (when (= msg (debug-menu-msg press))
+    (if (= (-> *test-debug-inspect* entity) e)
+      (set-entity! *test-debug-inspect* (the entity #f))
+      (set-entity! *test-debug-inspect* e)
+      )
+    (if (= (-> *test-debug-inspect* entity) e) 
+      (set! edit-me (-> (the process-drawable (-> e extra process)) root trans))
+      (set! edit-me (new 'static 'vector :x 0.0 :y 0.0 :z 0.0 :w 0.0))
+      )
+    )
+  (= (-> *test-debug-inspect* entity) e)
+)
+
+(defun build-test-list ()
+  "Fill the test pick menu"
+  ;; clear old list
+  (debug-menu-remove-all-items *test-pick-menu*)
+  ;; go through active levels
+  (dotimes (s5-0 (-> *level* length))
+    (let ((s4-0 (-> *level* level s5-0)))
+      (when (= (-> s4-0 status) 'active)
+        ;; actor entities
+        (let ((s3-0 (-> s4-0 bsp actors)))
+          (when (nonzero? s3-0)
+            (dotimes (s2-0 (-> s3-0 length))
+              (let ((s1-0 (-> s3-0 data s2-0 actor)))
+                (debug-menu-append-item *test-pick-menu* (new-dm-flag (res-lump-struct s1-0 'name string) s1-0 dm-test-pick-func))
+                )
+              )
+            )
+          )
+  ;removed loops for ambient and camera 
+        )
+      )
+    )
+  (set! (-> *test-pick-menu* items) (sort (-> *test-pick-menu* items) debug-menu-node<?))
+)
+
+
+(defun debug-menu-make-test-menu ((ctx debug-menu-context))
+  (let ((test-menu (new 'debug 'debug-menu ctx "test menu")))
+      (debug-menu-append-item test-menu (new-dm-func "On / off" #f dm-vmenu-func))
+
+      (debug-menu-append-item test-menu (new-dm-func "Refresh list" #f build-test-list))
+
+      (let ((a-menu (new 'debug 'debug-menu ctx "a menu")))
+        (set! *test-pick-menu* a-menu)
+        (debug-menu-append-item test-menu (new-dm-submenu "Pick Entity" a-menu))
+        )
+
+      (debug-menu-append-item test-menu (new-dm-var-float "Amount" (the int #f) (dm-lambda-float-var add-amount) (meters 1.0) (meters 0.0) (meters 20.0)))
+
+      (debug-menu-append-item test-menu (new-dm-func "Halve" #f dm-halve-func))
+
+      (debug-menu-append-item test-menu (new-dm-func "Print to REPL" #f printing-func))
+
+      (debug-menu-append-item test-menu (new-dm-func "Teleport Jak" #f jak-teleport-func))
+
+      (new-dm-submenu "Thing mover" test-menu)
+      )
+)
+(debug-menu-append-item (-> *debug-menu-context* root-menu) (debug-menu-make-test-menu *debug-menu-context*))
+
+
+;;;;;;;;;;;;;;;
+
   (let* ((prog-menu (new 'debug 'debug-menu *debug-menu-context* "Progress menu"))
          (prog-menu-node (new-dm-submenu "Progress" prog-menu))
          (other-menu-node

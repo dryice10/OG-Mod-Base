@@ -1,0 +1,103 @@
+;;-*-Lisp-*-
+(in-package goal)
+
+#|
+This is very very janky
+An in-game/REPL vector editor
+Run (vmenu-on) to turn the process on 
+To affect the game, use the REPL to change "edit-me" to another vector
+
+examples:
+
+(vmenu-on)
+
+(set! edit-me (target-pos 0)) 
+
+(set! edit-me (-> (the process-drawable (process-by-ename "explorer-4")) root trans))
+
+(set! edit-me (-> (the process-drawable (process-by-ename "ropebridge-4")) draw color-mult))
+
+
+|#
+
+(define edit-me (new 'static 'vector :x 1.0 :y 0.0 :z 2.0 :w 0.0))
+(define add-amount 4096.0)
+
+(define coord-int 0) ;menu's page index
+(define coord-size 2) ;number of page used to mod
+(define coord-string (new 'static 'boxed-array :type string
+    "Editing XZ"
+    "Editing YZ"
+    ))
+
+(define col-int 8) ;int for menu's font color
+(define menu-origin (new 'static 'vector4w :x 10 :y 160 :z 2 :w 0))
+
+
+(defun controls-func ()
+    ;lets you +/- add-amount to selected xyz coords
+    (when (not (cpad-hold? 0 l1))
+        (when (= coord-int 0)
+            (when (cpad-pressed? 0 up) (+! (-> edit-me x) add-amount))
+            (when (cpad-pressed? 0 down) (-! (-> edit-me x) add-amount))
+            (when (cpad-pressed? 0 right) (+! (-> edit-me z) add-amount))
+            (when (cpad-pressed? 0 left) (-! (-> edit-me z) add-amount))
+        )
+        (when (= coord-int 1)
+            (when (cpad-pressed? 0 up) (+! (-> edit-me y) add-amount))
+            (when (cpad-pressed? 0 down) (-! (-> edit-me y) add-amount))
+            (when (cpad-pressed? 0 right) (+! (-> edit-me z) add-amount))
+            (when (cpad-pressed? 0 left) (-! (-> edit-me z) add-amount))
+        )
+    )
+
+    ;hold l1 to select which coordinate
+    (when (cpad-hold? 0 l1)
+        (when (cpad-pressed? 0 right)
+            (set! coord-int (mod (+ coord-int 1) coord-size)))
+        (when (cpad-pressed? 0 left)
+            (set! coord-int (mod (+ (- coord-int 1) coord-size) coord-size)))
+    )
+)
+
+
+(defun vmenu-on ()
+  ;process-spawn-function, spawns a process that runs the function you give it
+  (process-spawn-function process :name 'vmenu-proc
+    ;This lambda is our function
+    (lambda :behavior process ()
+
+    ;Code before the loop runs once on process spawn
+
+
+    ;Loop runs once per frame while process is active
+    (loop  
+        
+        ;main controls for left/right menu
+        (controls-func)
+
+        ;Start a bucket thing block so we can use draw functions
+        (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) debug-buf)) (bucket-id debug-no-zbuf))
+
+            (draw-string-xy (string-format "L1 + L/R to switch coord") testbuf (-> menu-origin x) (-> menu-origin y) (the font-color 2) (font-flags shadow kerning))
+            (draw-string-xy (string-format "~s" (-> coord-string coord-int)) testbuf (-> menu-origin x) (+ (-> menu-origin y) 8) (the font-color col-int) (font-flags shadow kerning))
+
+            (draw-string-xy (string-format "< ~12,,4m  ~12,,4m  ~12,,4m  ~12,,4m >" (-> edit-me data 0) (-> edit-me data 1) (-> edit-me data 2) (-> edit-me data 3)) 
+                                    testbuf (-> menu-origin x) (+ (-> menu-origin y) 16) (the font-color col-int) (font-flags shadow kerning))
+
+        )
+      ;Processes should suspend themselves, the loop will resume next frame
+      (suspend)
+      )
+    )
+  )
+    
+;Lisp returns the last form as the function return
+(none)
+)
+
+
+(defun vmenu-off ()
+  "Kill the button process"
+  (kill-by-name 'vmenu-proc *active-pool*)
+  )

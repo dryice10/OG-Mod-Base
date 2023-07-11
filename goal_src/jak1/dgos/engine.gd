@@ -207,6 +207,7 @@
   "pckernel-common.o" ;; added
   "pckernel.o" ;; added
   "buttontext2.o" ;;added
+  "vectoredit.o" ;;added
   "mood-tables.o"
   "mood.o"
   "weather-part.o"
