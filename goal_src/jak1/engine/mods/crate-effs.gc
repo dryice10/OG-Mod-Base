@@ -1,0 +1,361 @@
+;;-*-Lisp-*-
+(in-package goal)
+
+;; change jak color red/blue based on effects count
+;;
+;;  rare effects:
+;;  (scale-joints *target* (cspace-index-by-name *target* "neckA") #t (new 'static 'vector :x .2 :y .2 :z .2)) ;needs to be in loop
+;;  random teleport
+;;  actor scale
+;;  negative running speed
+
+(define red symbol) ;negative effects
+(define blue symbol) ;positive effects
+
+
+(define reroll-chance 0.0)
+
+(defun rare-effect ((arg0 symbol))
+
+
+)
+
+;shift sphere
+
+
+
+
+(defun hurt-heal ((arg0 symbol))
+  (when (= arg0 'red)
+    (send-event *target* 'attack #t (static-attack-info ((mode 'explode) (shove-up (meters 6.0)) (shove-back (meters 5.0))))) ;try 'drown-death
+  )
+  (when (= arg0 'blue)
+    (send-event *target* 'get-pickup (pickup-type eco-green) 5.0)
+  )
+)
+
+
+(define hour-amt 4)
+
+(defun change-time-of-day ((arg0 symbol)) ;time of day might be best, or look at mood pallete amount values
+  (when (= arg0 'red)
+    (+! (-> *time-of-day-proc* 0 hour) (- 24 hour-amt)) ; this gets the same effect as subtracting, negative hours crashes
+  )
+  (when (= arg0 'blue)
+    (+! (-> *time-of-day-proc* 0 hour) hour-amt)
+  )
+)
+
+; might move to steel crates if enough effects
+; add noise for minus orbs
+(defun change-orbs ((arg0 symbol)) 
+  (when (= arg0 'red)
+    (-! (-> *game-info* money) 1)
+  )
+  (when (= arg0 'blue)
+    (+! (-> *game-info* money) 1)
+  )
+)
+
+
+(define stone-amt (meters 6.0))
+(define grass-amt (meters 5.0))
+(define ice-amt (meters 2.0))
+(define slip-counter 0) ;counter for how red/blue you are
+
+(defun change-slippery ((arg0 symbol))
+  (when (= arg0 'red)
+    (-! (-> *stone-surface* fric) stone-amt)
+    (-! (-> *grass-surface* fric) grass-amt)
+    (-! (-> *ice-surface* fric) ice-amt)
+    (-! slip-counter 1)
+  )
+  (when (= arg0 'blue)
+    (+! (-> *stone-surface* fric) stone-amt)
+    (+! (-> *grass-surface* fric) grass-amt)
+    (+! (-> *ice-surface* fric) ice-amt)
+    (+! slip-counter 1)
+  )
+)
+
+
+(define heat-amt 10)
+(define speed-amt (meters 15.0))
+(define flut-jump-amt (meters 1.0))
+(define vehicle-counter 0) ;counter for how red/blue you are
+
+(defun change-vehicle ((arg0 symbol))
+  (when (= arg0 'red)
+    (-! (-> *RACER-bank* heat-max) heat-amt)
+    (-! (-> *racer-mods* target-speed) speed-amt)
+    (-! (-> *FLUT-bank* jump-height-min) flut-jump-amt)
+    (-! (-> *FLUT-bank* jump-height-max) flut-jump-amt)
+    (-! (-> *FLUT-bank* double-jump-height-min) flut-jump-amt)
+    (-! (-> *FLUT-bank* double-jump-height-max) flut-jump-amt)
+    (-! (-> *flut-walk-mods* target-speed) speed-amt)
+    (-! (-> *flut-jump-mods* target-speed) speed-amt)
+    (-! vehicle-counter 1)
+  )
+  (when (= arg0 'blue)
+    (+! (-> *RACER-bank* heat-max) heat-amt)
+    (+! (-> *racer-mods* target-speed) speed-amt)
+    (+! (-> *FLUT-bank* jump-height-min) flut-jump-amt)
+    (+! (-> *FLUT-bank* jump-height-max) flut-jump-amt)
+    (+! (-> *FLUT-bank* double-jump-height-min) flut-jump-amt)
+    (+! (-> *FLUT-bank* double-jump-height-max) flut-jump-amt)
+    (+! (-> *flut-walk-mods* target-speed) speed-amt)
+    (+! (-> *flut-jump-mods* target-speed) speed-amt)
+    (+! vehicle-counter 1)
+  )
+  (set! (-> *racer-mods* transv-max) (-> *racer-mods* target-speed))  ; transv-max is normally 10 lower, but lets make them equal
+)
+
+
+(define rolljump-dist-amt   (meters 8.0))
+(define rolljump-height-amt (meters 0.8))
+(define rolljump-counter 0) ;counter for how red/blue you are
+
+
+(defun change-rolljump ((arg0 symbol))  ;interacts with scale
+  (when (= arg0 'red)
+    (-! (-> *TARGET-bank* wheel-flip-dist) rolljump-dist-amt)
+    (-! (-> *TARGET-bank* wheel-flip-height) rolljump-height-amt)
+    (-! rolljump-counter 1)
+  )
+  (when (= arg0 'blue)
+    (+! (-> *TARGET-bank* wheel-flip-dist) rolljump-dist-amt)
+    (+! (-> *TARGET-bank* wheel-flip-height) rolljump-height-amt)
+    (+! rolljump-counter 1)
+  )
+)
+
+
+(define attack-amt (meters 0.7))
+(define attack-counter 0)
+
+(defun change-attack ((arg0 symbol))    ; could combine with another
+  (when (= arg0 'red)
+    (-! (-> *TARGET-bank* spin-radius) attack-amt)
+    (-! (-> *TARGET-bank* punch-radius) attack-amt)
+    (-! attack-counter 1)
+  )
+  (when (= arg0 'blue)
+    (+! (-> *TARGET-bank* spin-radius) attack-amt)
+    (+! (-> *TARGET-bank* punch-radius) attack-amt)
+    (+! attack-counter 1)
+  )
+)
+
+
+(define eco-single-amt (seconds 1.0))
+(define eco-full-amt (seconds 3.0))
+(define suck-amt (meters 4.0))
+(define yellow-amt (meters 10))
+(define eco-counter 0)
+
+;(send-event *target* 'reset-pickup 'eco) ;need to do this at some point
+(defun change-eco ((arg0 symbol))
+  (when (= arg0 'red)
+    (-! (-> *FACT-bank* eco-single-timeout) eco-single-amt)
+    (-! (-> *FACT-bank* eco-full-timeout) eco-full-amt)
+    (-! (-> *FACT-bank* suck-bounce-dist) suck-amt)
+    (-! (-> *FACT-bank* suck-suck-dist) suck-amt)
+    (-! (-> *TARGET-bank* yellow-projectile-speed) suck-amt)
+    (-! eco-counter 1)
+  )
+  (when (= arg0 'blue)
+    (+! (-> *FACT-bank* eco-single-timeout) eco-single-amt)
+    (+! (-> *FACT-bank* eco-full-timeout) eco-full-amt)
+    (+! (-> *FACT-bank* suck-bounce-dist) suck-amt)
+    (+! (-> *FACT-bank* suck-suck-dist) suck-amt)
+    (+! (-> *TARGET-bank* yellow-projectile-speed) suck-amt)
+    (+! eco-counter 1)
+  )
+)
+
+
+(define jump-amt (meters 2.5))
+(define jump-counter 0)
+
+(defun change-jump ((arg0 symbol))  ;add normal jumps?
+  (when (= arg0 'red)
+    (-! (-> *TARGET-bank* flip-jump-height-min) jump-amt) ;flip = rolljump jump
+    (-! (-> *TARGET-bank* flip-jump-height-max) jump-amt)
+    (-! (-> *TARGET-bank* flop-jump-height-min) jump-amt) ;flop  = groundpound jump
+    (-! (-> *TARGET-bank* flop-jump-height-max) jump-amt)
+    (-! jump-counter 1)
+  )
+  (when (= arg0 'blue)
+    (+! (-> *TARGET-bank* flip-jump-height-min) jump-amt) ;flip = rolljump jump
+    (+! (-> *TARGET-bank* flip-jump-height-max) jump-amt)
+    (+! (-> *TARGET-bank* flop-jump-height-min) jump-amt) ;flop = groundpound jump
+    (+! (-> *TARGET-bank* flop-jump-height-max) jump-amt)
+    (+! jump-counter 1)
+  )
+)
+
+
+(define scale-amt 0.3)
+(define scale-counter 0)
+
+(defun change-scale ((arg0 symbol))
+  (when (= arg0 'red)
+    (-! (-> *target* root scale x) scale-amt)
+    (-! (-> *target* root scale y) scale-amt)
+    (-! (-> *target* root scale z) scale-amt)
+    (-! scale-counter 1)
+  )
+  (when (= arg0 'blue)
+    (+! (-> *target* root scale x) scale-amt)
+    (+! (-> *target* root scale y) scale-amt)
+    (+! (-> *target* root scale z) scale-amt)
+    (+! scale-counter 1)
+  )
+)
+
+
+(define fling-amt (meters 30.0))
+
+(defun fling-jak ((arg0 symbol))
+  (when (= arg0 'red)
+    (send-event *target* 'shove #t (static-attack-info ((shove-up (meters 1.0)) (shove-back fling-amt))))
+  )
+  (when (= arg0 'blue)
+    (send-event *target* 'shove #t (static-attack-info ((shove-up fling-amt) (shove-back (meters 1.0)))))
+  )
+)
+
+(define qty-effs 12)
+
+(defun crate-eff-red ()
+  (format #t "crate eff red~%")
+  (case (rand-vu-int-count qty-effs) ;starts at 0
+     ((0)
+      (format #t "roll 0")
+      (fling-jak 'red)
+    )
+    ((1)
+      (format #t "roll 1")
+      (change-time-of-day 'red)
+    )
+    ((2)
+      (format #t "roll 2")
+      (change-scale 'red)
+    )
+    ((3)
+      (format #t "roll 3")
+      (change-jump 'red)
+    )
+    ((4)
+      (format #t "roll 4")
+      (change-eco 'red)
+    )
+    ((5)
+      (format #t "roll 5")
+      (change-orbs 'red)
+    )
+    ((6)
+      (format #t "roll 6")
+      (change-attack 'red)
+    )
+    ((7)
+      (format #t "roll 7")
+      (change-rolljump 'red)
+    )
+    ((8)
+      (format #t "roll 8")
+      (hurt-heal 'red)
+    )
+    ((9)
+      (format #t "roll 9")
+      (change-vehicle 'red)
+    )
+    ((10)
+      (format #t "roll 10")
+      (change-slippery 'red)
+    )
+    ((11)
+      (format #t "roll 11")
+      (rare-effect 'red)
+    )
+    (else
+      (format #t "roll bad")
+      ;(sound-play "wcrate-break")
+    )
+  )
+
+(none)
+)
+
+
+(defun crate-eff-blue ()
+  (format #t "crate eff blue~%")
+  (case (rand-vu-int-count qty-effs)
+     ((0)
+      (format #t "roll 0")
+      (fling-jak 'blue)
+    )
+    ((1)
+      (format #t "roll 1")
+      (change-time-of-day 'blue)
+    )
+    ((2)
+      (format #t "roll 2")
+      (change-scale 'blue)
+    )
+    ((3)
+      (format #t "roll 3")
+      (change-jump 'blue)
+    )
+    ((4)
+      (format #t "roll 4")
+      (change-eco 'blue)
+    )
+    ((5)
+      (format #t "roll 5")
+      (change-orbs 'blue)
+    )
+    ((6)
+      (format #t "roll 6")
+      (change-attack 'blue)
+    )
+    ((7)
+      (format #t "roll 7")
+      (change-rolljump 'blue)
+    )
+    ((8)
+      (format #t "roll 8")
+      (hurt-heal 'blue)
+    )
+    ((9)
+      (format #t "roll 9")
+      (change-vehicle 'blue)
+    )
+    ((10)
+      (format #t "roll 10")
+      (change-slippery 'blue)
+    )
+    ((11)
+      (format #t "roll 11")
+      (rare-effect 'blue)
+    )
+    (else
+      (format #t "roll bad")
+      ;(sound-play "wcrate-break")
+    )
+  )
+
+(none)
+)
+
+
+(defun crate-eff-red-fly ()
+  (fling-jak 'red)
+(none)
+)
+
+
+(defun crate-eff-blue-fly ()
+  (fling-jak 'blue)
+(none)
+)

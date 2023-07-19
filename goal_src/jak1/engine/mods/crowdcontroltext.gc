@@ -1,0 +1,122 @@
+#|
+Start of a text system for Crowd Control
+
+Has 10 text slots on screen
+add-eff-text adds one of the strings to 
+the bottom slot and shifts the others up
+
+
+|#
+
+;;;;;;;;;;;;;;;
+(define veca (the-as (array vector) (new 'static 'boxed-array :type vector :length 2
+                    (new 'static 'vector :x 1. :y 1. :z 1.) (new 'static 'vector :x 1. :y 1. :z 1.) ))) ; set! these to stuff
+
+
+
+
+;command_names from the python file
+(define effs (the-as (array string) (new 'static 'boxed-array :type string :length 75
+                "protect" "rjto" "superjump" "superboosted" "noboosteds" "fastjak" "slowjak" "pacifist" "trip" "shortfall" 
+                "ghostjak" "getoff" "flutspeed" "freecam" "enemyspeed" "give" "collected" "eco" "sucksuck" "noeco"
+                "die" "topoint" "randompoint" "setpoint" "tp" "shift" "movetojak" "ouch" "burn" "hp" 
+                "melt" "drown" "endlessfall" "iframes" "invertcam" "normalcam" "stickycam" "deload" "quickcam" "dark"
+                "dax" "smallnet" "widefish" "lowpoly" "moveplantboss" "moveplantboss2" "basincell" "resetactors" "repl" "debug"
+                "save" "resetcooldowns" "cd" "dur" "enable" "disable" "widejak" "flatjak" "smalljak" "bigjak" 
+                "color" "scale" "slippery" "rocketman" "actorson" "actorsoff" "unzoom" "bighead" "smallhead" "bigfist" 
+                "bigheadnpc" "hugehead" "mirror" "notex" "fixoldsave")))
+
+
+(define spacing 8) ;y space between text, used in setup-coords
+(define xcoord 390)
+(define ystart 210)
+(define ycoords (new 'static 'array int 10
+                        0 0 0 0 0 0 0 0 0 0))
+
+(defun setup-coords() ;I could probably do this in the loop, sounds messy though
+(dotimes (i 10)
+    (set! (-> ycoords i)
+        (- ystart (* i spacing)))
+)
+)
+
+;string array, has 10 slots, will be used by the draw-string loop
+(define stra (the-as (array string) (new 'static 'boxed-array :type string :length 10
+                    "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"))) ; set! these to stuff
+
+(defun shift-slots-up ()
+(countdown (i 10)   ;opposite of dotimes, i goes from 9 to 0
+    (if (= i 9)
+    #t  ;if i=9 skip, so we don't go out of array
+    (set! (-> stra (+ i 1)) (-> stra i))
+    )
+)
+)
+
+;add a string from effs to the bottom slot
+(defun add-eff-text ((arg0 int))
+  (shift-slots-up)
+  (set! (-> stra 0) (-> effs arg0))
+)
+
+
+(define used 0) ;number of slots in stra currently used
+
+
+
+(defun-debug cctext-1 ()
+  "Lava is stored in the tube"
+
+  (let ((cctext-proc
+    (process-spawn-function process :name 'cctext-proc
+      (lambda :behavior process ()
+      (stack-size-set! (-> self main-thread) 128)
+      ;Code before the loop runs once on process spawn
+
+      (setup-coords)
+
+      ;Loop runs once per frame while process is active
+      (loop
+
+        ;Start a bucket thing block
+        (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) debug-buf)) (bucket-id debug-no-zbuf))
+
+        (dotimes (i 10)
+        (draw-string-xy (string-format "~s" (-> stra i))
+            testbuf xcoord (-> ycoords i) (the font-color i) (font-flags shadow kerning))
+        )
+        );end bucket
+
+        (suspend)
+      );end loop
+      )
+    )
+    ))
+    ;Lisp returns the last form as the function return
+    (none)
+    )
+)
+
+
+(defun-debug cctext-kill ()
+  "Kill the cctext process"
+  ;I guess you could put other cleanup code here, like resetting variables
+
+  (kill-by-name 'cctext-proc *active-pool*)
+  )
+
+
+
+;;;;;;;;;;;;;;;;;;
+
+
+#|
+
+;todo: when a timer runs out, the current text slot dies
+;and the ones above it should move down
+
+(defun shift-above-down ()
+
+)
+
+|#
