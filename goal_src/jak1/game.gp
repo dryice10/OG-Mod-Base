@@ -2065,7 +2065,7 @@
 ;; Custom or Modified Code
 (goal-src "pc/features/autosplit-h.gc")
 (goal-src "pc/features/autosplit.gc" "autosplit-h" "task-control-h" "progress-static")
-(goal-src "pc/features/speedruns.gc" "speedruns-h" "autosplit-h")
+(goal-src "pc/features/speedruns.gc" "speedruns-h" "autosplit-h" "racer")
 (goal-src "pc/pckernel-h.gc" "dma-buffer")
 (goal-src "pc/pckernel-impl.gc" "pckernel-h")
 (goal-src "pc/util/pc-anim-util.gc" "target-h")

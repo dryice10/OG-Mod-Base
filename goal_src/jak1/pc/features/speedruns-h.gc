@@ -43,6 +43,8 @@
    (category speedrun-category)
    (needs-post-blackout-setup? symbol)
    (should-display? symbol)
+   (should-display-deload-info? symbol)
+   (show-input-display? symbol)
    )
   )
 
@@ -53,3 +55,23 @@
 (define-extern setup-speedrun-post-blackout (function none))
 (define-extern speedrun-mode-update (function none))
 (define-extern speedrun-draw-settings (function none))
+
+(define-extern speedrun-practice-spawn (function none)) ;; defined at end of this file
+(define-extern speedrun-practice-store-temp-checkpoint (function none)) ;; defined at end of this file
+
+(defenum speedrun-practice-option
+  :type uint8
+  (none)
+  (lts-old)
+  (lts-new)
+  (sfb)
+  (fcs)
+  (misty-boosted)
+  (boulderskip)
+  (piggyback)
+  (buttonskip)
+  (gondola-flut)
+  (gondola-foot)
+  (lavawalk-2)
+  (lavawalk-3)
+  )
