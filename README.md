@@ -1,5 +1,7 @@
 # Jak Speedrunning Practice (OpenGOAL)
 
+## Jak 1
+
 | Button combination | Effect | 
 |-|-|
 | Hold L1+R1+X and press Start or Select | Brings up speedrunner menu for fast resets and access to custom checkpoints. |
@@ -12,4 +14,16 @@
 - Known Issues: 
   - if you set a custom checkpoint while Jak is swimming, on respawn the camera likes to go crazy and zoom out until the level deloads
   - Respawning during a cutscene can sometimes crash when the cutscene finishes
-  - Custom checkpoints don't properly restore the camera zoom
+  - Custom checkpoints don't perfectly restore the camera zoom
+
+## Jak 2
+
+| Button combination | Effect | 
+|-|-|
+| Hold L1+R1+X and press Start or Select | Brings up speedrunner menu for fast resets |
+| Hold R3 and press dpad Down | Set a custom checkpoint at Jak's current position. Only works if Jak is in an "idle" state. Plays a sound to confirm. |
+| Hold R3 and press dpad Up | Reset to a custom checkpoint. |
+
+- If inputs are not working, double check that Speedrunner Mode is enabled under Misc Options
+- Known Issues: 
+  - Custom checkpoints don't perfectly restore the camera zoom
