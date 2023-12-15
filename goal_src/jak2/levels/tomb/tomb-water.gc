@@ -1762,6 +1762,42 @@ This commonly includes things such as:
   )
 
 
+(defun print-vibe-index ((this tomb-vibe))
+  ;; (return 0)
+  (case (-> this state name) 
+    (('idle 'vibrate)
+      (internal-draw-text-3d-2
+        (bucket-id screen-filter)
+        (string-format "~D" (-> this pat-tbl (-> this pat-index)))
+        (-> this root trans)
+        (case (-> this pat-tbl (-> this pat-index))
+          ((0)
+            (font-color red)
+            ) 
+          ((1)
+            (font-color yellow)
+            )
+          ((2)
+            (font-color green)
+            )
+          ((3)
+            (font-color blue)
+            )
+          ((4)
+            (font-color cyan)
+            )
+          (else ;; (5)
+            (font-color pink)
+            )
+          )
+        (new 'static 'vector2h)
+        #t  ;; BIG
+        )
+      )
+    )
+  (none)
+  )
+
 (defskelgroup skel-tomb-vibe tomb-vibe tomb-vibe-lod0-jg tomb-vibe-idle-ja
               ((tomb-vibe-lod0-mg (meters 999999)))
               :bounds (static-spherem 0 0 0 4)
@@ -1866,6 +1902,7 @@ This commonly includes things such as:
       )
     )
   :trans (behavior ()
+    (print-vibe-index self)
     0
     )
   :code sleep-code
@@ -1944,6 +1981,7 @@ This commonly includes things such as:
     (set-vector! (-> self draw color-mult) 1.0 1.0 1.0 1.0)
     )
   :trans (behavior ()
+    (print-vibe-index self)
     0
     )
   :code (behavior ()
