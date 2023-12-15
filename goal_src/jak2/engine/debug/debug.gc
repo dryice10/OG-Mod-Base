@@ -317,12 +317,11 @@ Most functions take a boolean as their first argument. If the boolean is set to 
     )
   )
 
-(defun-debug internal-draw-debug-text-3d ((bucket bucket-id) (text string) (position vector) (color font-color) (screen-offset vector2h))
-  "Draw text at the given location (in 3D), with a 2D offset."
+(defun internal-draw-text-3d-2 ((bucket bucket-id) (text string) (position vector) (color font-color) (screen-offset vector2h) (large? symbol))
   (let ((screen-pos (new 'stack-no-clear 'vector4w)))
     (set! (-> screen-pos quad) (the-as uint128 0))
     (when (transform-point-qword! screen-pos position)
-        (with-dma-buffer-add-bucket ((buf (-> *display* frames (-> *display* on-screen) debug-buf))
+        (with-dma-buffer-add-bucket ((buf (-> *display* frames (-> *display* on-screen) global-buf))
                                      bucket
                                      )
           (let ((font-ctx (new
@@ -333,7 +332,10 @@ Most functions take a boolean as their first argument. If the boolean is set to 
                             (the-as int (+ (-> screen-offset y) -1855 (/ (the-as int (-> screen-pos y)) 16)))
                             0.0
                             color
-                            (font-flags shadow kerning)
+                            (if large? 
+                              (font-flags shadow large kerning)
+                              (font-flags shadow kerning)
+                              )
                             )
                           )
                 )
@@ -346,6 +348,18 @@ Most functions take a boolean as their first argument. If the boolean is set to 
         )
     )
   )
+
+(defun-debug internal-draw-debug-text-3d ((bucket bucket-id) (text string) (position vector) (color font-color) (screen-offset vector2h))
+  "Draw text at the given location (in 3D), with a 2D offset."
+  (internal-draw-text-3d-2 
+    bucket
+    text
+    position
+    color
+    screen-offset
+    #f  ;; SMALL
+    )
+)
 
 (defun-debug add-debug-outline-triangle ((enable symbol) (bucket bucket-id) (p0 vector) (p1 vector) (p2 vector) (color rgba))
   "Draw outline of a triangle using lines."
