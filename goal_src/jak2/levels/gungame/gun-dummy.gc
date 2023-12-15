@@ -2048,6 +2048,16 @@
              )
             (((tpath-command translate))
              (set! (-> this score) (- (-> this score) (* (-> this score-speed) (seconds-per-frame))))
+                
+                
+                (if (> (-> this hit-points) 0) (add-debug-text-3d
+      #t
+      (bucket-id debug-no-zbuf1)
+      (string-format "~F"  (-> this score))
+      (-> this root trans)
+      (font-color red)
+      (the-as vector2h #f)
+      ))
              (set! (-> this inout-percent) (fmax 0.0 (- (-> this inout-percent) (* 4.0 (seconds-per-frame)))))
              (let ((s2-4 (new 'stack-no-clear 'vector))
                    (s3-4 (new 'stack-no-clear 'vector))
@@ -2127,6 +2137,18 @@
              )
             (((tpath-command wait))
              (set! (-> this score) (- (-> this score) (* (-> this score-speed) (seconds-per-frame))))
+             
+ (if (> (-> this hit-points) 0)
+    (add-debug-text-3d
+      #t
+      (bucket-id debug-no-zbuf1)
+      (string-format "~F"  (-> this score))
+      (-> this root trans)
+      (font-color red)
+      (the-as vector2h #f)
+      )
+ )
+
              (set! (-> this inout-percent) (fmax 0.0 (- (-> this inout-percent) (* 4.0 (seconds-per-frame)))))
              (get-point-in-path! path (-> this root trans) (-> this path-pos) 'interp)
              (set! (-> this first-time-command) #f)
@@ -2382,6 +2404,16 @@ This commonly includes things such as:
       )
     )
   (set! (-> this score) (the float (-> arg0 score)))
+   (if (> (-> this hit-points) 0)
+      (add-debug-text-3d
+      #t
+      (bucket-id debug-no-zbuf1)
+      (string-format "~F"  (-> this score))
+      (-> this root trans)
+      (font-color red)
+      (the-as vector2h #f)
+      )
+   )
   (if (logtest? (-> arg0 flags) (tpath-flags citizen))
       (set! (-> this score-speed) 0.0)
       (set! (-> this score-speed) (/ (-> this score) (path-time-elapsed this)))
