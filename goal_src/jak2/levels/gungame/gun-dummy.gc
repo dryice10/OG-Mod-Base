@@ -1562,11 +1562,20 @@
     )
   )
 
+(define *gun-dummy-str* (new 'global 'string 64 (the-as string #f)))
 (defun print-dummy-score ((this gun-dummy))
   (when (> (-> this hit-points) 0)
+    ;; start with score
+    (format (clear *gun-dummy-str*) "~D~%" (the int (-> this score)))
+    ;; add random flag (all others are clear from dummy type/state)
+    (if (logtest? (-> this info flags) (tpath-flags tpath-rand))
+      (format *gun-dummy-str* "R")
+      )
+
+    ;; print
     (internal-draw-text-3d-2
       (bucket-id screen-filter)
-      (string-format "~D" (the int (-> this score)))
+      *gun-dummy-str*
       (-> this root trans)
       (cond 
         ((< (-> this score) 0.0)
