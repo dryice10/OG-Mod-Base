@@ -1549,6 +1549,7 @@
    (turn-sound          sound-id)
    (spin-sound          sound-id)
    (last-combo-time     time-frame)
+   (anim-idx            uint32)
    )
   (:state-methods
     idle
@@ -1568,8 +1569,8 @@
     ;; start with score
     (format (clear *gun-dummy-str*) "~D~%" (the int (-> this score)))
     ;; add random flag (all others are clear from dummy type/state)
-    (if (logtest? (-> this info flags) (tpath-flags tpath-rand))
-      (format *gun-dummy-str* "R")
+    (when (logtest? (-> this info flags) (tpath-flags tpath-rand))
+      (format *gun-dummy-str* "R (~D/~D)" (+ (-> this anim-idx) 1) (-> this info num-anims))
       )
 
     ;; print
@@ -2403,10 +2404,11 @@ This commonly includes things such as:
   (if (not (logtest? (-> arg0 flags) (tpath-flags tpath-rand)))
       (set! *tpath-rand* (the-as uint (rand-vu-int-count 16)))
       )
+  (set! (-> this anim-idx) (mod *tpath-rand* (-> arg0 num-anims)))
   (set! (-> this current)
         (the-as
           (inline-array tpath-control-frame)
-          (-> (the-as (inline-array tpath-control-frame) (-> arg0 anims (mod *tpath-rand* (-> arg0 num-anims)))) 0)
+          (-> (the-as (inline-array tpath-control-frame) (-> arg0 anims (-> this anim-idx))) 0)
           )
         )
   (let ((path (-> this current)))
