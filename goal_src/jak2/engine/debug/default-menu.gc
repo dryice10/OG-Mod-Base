@@ -3097,7 +3097,7 @@
       (debug-menu-make-from-template
         arg0
         '(menu
-           "Speedun Tools"           
+           "Speedrun Tools"           
              (flag "No Invuln" noinvuln dm-speedrun-practice-func)
              (flag "Set Invuln1" invuln1 dm-speedrun-practice-func)
              (flag "Set Invuln2" invuln2 dm-speedrun-practice-func)
