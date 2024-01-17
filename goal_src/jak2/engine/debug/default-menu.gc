@@ -3005,6 +3005,39 @@
   #f
   )
 
+(defun dm-speedrun-practice-func ((arg0 int) (arg1 debug-menu-msg))
+  (when *target*
+    (case arg0
+      (('noinvuln)
+        (when (= arg1 (debug-menu-msg press))
+          (logclear! (-> *target* focus-status) (focus-status dead ignore))
+          (logclear! (-> *target* state-flags) (state-flags disable-attacks))
+          )
+        (return #f)
+        )
+      (('invuln1)
+        (when (= arg1 (debug-menu-msg press))
+          (logior! (-> *target* focus-status) (focus-status dead ignore))
+          (logior! (-> *target* state-flags) (state-flags disable-attacks))
+          )
+        (return (and (logtesta? (-> *target* focus-status) (focus-status dead ignore))
+                     (logtest? (-> *target* state-flags) (state-flags disable-attacks))
+                     ))
+        )
+      (('invuln2)
+        (when (= arg1 (debug-menu-msg press))
+          (logclear! (-> *target* focus-status) (focus-status dead ignore))
+          (logior! (-> *target* state-flags) (state-flags disable-attacks))
+          )
+        (return (and (not (logtest? (-> *target* focus-status) (focus-status dead ignore)))
+                     (logtest? (-> *target* state-flags) (state-flags disable-attacks))
+                     ))
+        )
+      )
+    )
+  #f
+  )
+
 (defun dm-anim-tester-func ((arg0 int) (arg1 debug-menu-msg))
   (local-vars (v0-1 symbol))
   (if (not *anim-tester*)
@@ -3059,6 +3092,18 @@
   (local-vars (sv-16 debug-menu-context))
   (let ((s5-0 (new 'debug 'debug-menu arg0 "Main menu")))
     (debug-menu-context-set-root-menu arg0 s5-0)
+    (debug-menu-append-item
+      s5-0
+      (debug-menu-make-from-template
+        arg0
+        '(menu
+           "Speedun Tools"           
+             (flag "No Invuln" noinvuln dm-speedrun-practice-func)
+             (flag "Set Invuln1" invuln1 dm-speedrun-practice-func)
+             (flag "Set Invuln2" invuln2 dm-speedrun-practice-func)
+           )
+        )
+      )
     (debug-menu-append-item
       s5-0
       (debug-menu-make-from-template
