@@ -81,7 +81,14 @@
        )
       )
     )
+  :trans (behavior ()
+    (if (and *debug-segment* *display-path-marks*)
+      (logclear! (-> self draw status) (draw-control-status no-draw-bounds))  ;; for debugging show blocking planes
+      (logior! (-> self draw status) (draw-control-status no-draw-bounds))
+      )
+    )
   :code sleep-code
+
   )
 
 (defmethod init! ((this blocking-plane) (vec-pair (inline-array vector)) (height float))
