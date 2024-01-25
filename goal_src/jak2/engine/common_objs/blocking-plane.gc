@@ -88,7 +88,6 @@
       )
     )
   :code sleep-code
-
   )
 
 (defmethod init! ((this blocking-plane) (vec-pair (inline-array vector)) (height float))
