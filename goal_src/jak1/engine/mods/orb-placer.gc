@@ -156,48 +156,48 @@
   )
 
 (defun orb-placer-list-maintenace ((update-debug-list? symbol))
-  (when update-debug-list? (debug-menu-remove-all-items *orb-placer-select-menu*))
+  ;; (when update-debug-list? (debug-menu-remove-all-items *orb-placer-select-menu*))
 
-  (dotimes (i *orb-placer-count*)
-    (let ((orb-handle (-> *orb-placer-orbs* i))
-          (is-selected? (and *orb-placer-enabled?* (= i *orb-placer-selected-idx*))))
-      (when (and (nonzero? orb-handle) (handle->process orb-handle))
-        (let ((orb-proc (the money (handle->process orb-handle))))
-          (when (and orb-proc (!= (-> orb-proc next-state name) 'dead-state) (!= (-> orb-proc next-state name) 'hud-collecting))
-            ;; ensure correct highlighting
-            (orb-placer-highlight 
-              orb-proc
-              is-selected?
-              )
+  ;; (dotimes (i *orb-placer-count*)
+  ;;   (let ((orb-handle (-> *orb-placer-orbs* i))
+  ;;         (is-selected? (and *orb-placer-enabled?* (= i *orb-placer-selected-idx*))))
+  ;;     (when (and (nonzero? orb-handle) (handle->process orb-handle))
+  ;;       (let ((orb-proc (the money (handle->process orb-handle))))
+  ;;         (when (and orb-proc (!= (-> orb-proc next-state name) 'dead-state) (!= (-> orb-proc next-state name) 'hud-collecting))
+  ;;           ;; ensure correct highlighting
+  ;;           (orb-placer-highlight 
+  ;;             orb-proc
+  ;;             is-selected?
+  ;;             )
 
-            ;; draw z-debug text
-            (add-debug-text-3d
-              #t
-              (bucket-id debug-no-zbuf)
-              (-> *orb-placer-temp-strs* i)
-              (-> orb-proc base)
-              (if is-selected? (font-color red) (font-color white))
-              (new 'static 'vector2h :y 16)
-              )
+  ;;           ;; draw z-debug text
+  ;;           (add-debug-text-3d
+  ;;             #t
+  ;;             (bucket-id debug-no-zbuf)
+  ;;             (-> *orb-placer-temp-strs* i)
+  ;;             (-> orb-proc base)
+  ;;             (if is-selected? (font-color red) (font-color white))
+  ;;             (new 'static 'vector2h :y 16)
+  ;;             )
 
-            (when update-debug-list?
-              ;; append to debug menu list
-              (let ((orb-menu-item (new-dm-flag (-> *orb-placer-temp-strs* i) i dm-orb-placer-select-func)))
-                (debug-menu-append-item *orb-placer-select-menu* orb-menu-item)
-                (when is-selected?
-                  (set! (-> *orb-placer-select-menu* selected-item) orb-menu-item)
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-    )
+  ;;           (when update-debug-list?
+  ;;             ;; append to debug menu list
+  ;;             (let ((orb-menu-item (new-dm-flag (-> *orb-placer-temp-strs* i) i dm-orb-placer-select-func)))
+  ;;               (debug-menu-append-item *orb-placer-select-menu* orb-menu-item)
+  ;;               (when is-selected?
+  ;;                 (set! (-> *orb-placer-select-menu* selected-item) orb-menu-item)
+  ;;                 )
+  ;;               )
+  ;;             )
+  ;;           )
+  ;;         )
+  ;;       )
+  ;;     )
+  ;;   )
 
-  (when update-debug-list?
-    (set! (-> *orb-placer-select-menu* items) (sort (-> *orb-placer-select-menu* items) debug-menu-node<?))
-    )
+  ;; (when update-debug-list?
+  ;;   (set! (-> *orb-placer-select-menu* items) (sort (-> *orb-placer-select-menu* items) debug-menu-node<?))
+  ;;   )
   (none)
   )
 
@@ -269,7 +269,7 @@
 ;; called from run-every-frame to ensure orb-placer is spawned/killed
 (define *orb-offset-tmp-vec* (new 'global 'vector))
 (defun orb-placer-maintenance ()
-  (when *debug-segment*
+  (when #f ;; *debug-segment*
     (orb-placer-list-maintenace #f)
 
     (when (and (not (paused?)) *orb-placer-enabled?*)

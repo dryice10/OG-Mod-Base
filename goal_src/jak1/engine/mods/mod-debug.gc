@@ -5,30 +5,111 @@
 (declare-file (debug))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Debug viz tools
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (define *show-bottom-height?* #f)
+;; (defun debug-maybe-draw-bottom-height ()
+;;   (when *show-bottom-height?*
+;;     (with-dma-buffer-add-bucket ((s5-0 (-> (current-frame) global-buf)) (bucket-id debug))
+;;       (dma-buffer-add-gs-set-flusha s5-0
+;;           (zbuf-1 (new 'static 'gs-zbuf :zbp #x1c0 :psm (gs-psm ct24)))
+;;           (test-1 (new 'static 'gs-test :ate #x1 :atst (gs-atest greater-equal) :aref #x26 :zte #x1 :ztst (gs-ztest greater-equal)))
+;;           (alpha-1 (new 'static 'gs-alpha :b #x1 :d #x1))
+;;           )
+;;       (with-cnt-vif-block-qwc (s5-0)
+;;         (add-boundary-shader (new 'static 'texture-id :index #x33 :page #x2) s5-0)
+;;           (let ((v1 (new 'stack-no-clear 'vector))
+;;                 (v2 (new 'stack-no-clear 'vector))
+;;                 (v3 (new 'stack-no-clear 'vector))
+;;                 (v4 (new 'stack-no-clear 'vector))
+;;                 )
+;;             ;; finally draw this mfer
+;;             (draw-plane v1 v2 v3 v4 s5-0)
+;;             )
+;;           (close-sky-buffer s5-0)
+;;         )
+;;       )      
+;;     )
+;;   (none)
+;;   )
+
+
+(define *show-greensage-cutscene-plane?* #f)
+(defun debug-maybe-draw-greensage-cutscene-plane ()
+  (when *show-greensage-cutscene-plane?* 
+    (with-dma-buffer-add-bucket ((s5-0 (-> (current-frame) global-buf)) (bucket-id debug))
+      (dma-buffer-add-gs-set-flusha s5-0
+          (zbuf-1 (new 'static 'gs-zbuf :zbp #x1c0 :psm (gs-psm ct24)))
+          (test-1 (new 'static 'gs-test :ate #x1 :atst (gs-atest greater-equal) :aref #x26 :zte #x1 :ztst (gs-ztest greater-equal)))
+          (alpha-1 (new 'static 'gs-alpha :b #x1 :d #x1))
+          )
+      (with-cnt-vif-block-qwc (s5-0)
+        (add-boundary-shader (new 'static 'texture-id :index #x33 :page #x2) s5-0)
+          (let ((v1 (new 'stack-no-clear 'vector))
+                (v2 (new 'stack-no-clear 'vector))
+                (v3 (new 'stack-no-clear 'vector))
+                (v4 (new 'stack-no-clear 'vector))
+                )
+            ;; +/- 200m around citadel door, see citadel-sages.gc:1076-ish in (defstate idle (green-sagecage)
+            (set-vector! v1  10624860.16   676208.64  -18821530.0  1.0)
+            (set-vector! v2  12263260.16   676208.64  -18821530.0  1.0)
+            (set-vector! v3  12263260.16  -962191.36  -18821530.0  1.0)
+            (set-vector! v4  10624860.16  -962191.36  -18821530.0  1.0)
+            ;; finally draw this mfer
+            (draw-plane v1 v2 v3 v4 s5-0)
+            )
+          (close-sky-buffer s5-0)
+        )
+      )      
+    )
+  (none)
+  )
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Additional debug menu(s)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun-debug debug-menu-make-modding-tools-menu ((ctx debug-menu-context))
-  (let ((modding-tools-menu (new 'debug 'debug-menu ctx "Modding Tools")))
+;; (defun-debug debug-menu-make-modding-tools-menu ((ctx debug-menu-context))
+;;   (let ((modding-tools-menu (new 'debug 'debug-menu ctx "Modding Tools")))
 
-    ;; orb-placer menu
-    (let ((orb-placer-menu (new 'debug 'debug-menu ctx "Orb Placer")))
-      (debug-menu-append-item orb-placer-menu (new-dm-bool "Edit Mode?" *orb-placer-enabled?* dm-boolean-toggle-pick-func))
-      (debug-menu-append-item orb-placer-menu (new-dm-func "Add Orb" #f orb-placer-add))
-      (let ((select-orb-menu (new 'debug 'debug-menu ctx "Select Orb")))
-        (set! *orb-placer-select-menu* select-orb-menu)
-        ;; populated on orb add
-        (debug-menu-append-item orb-placer-menu (new-dm-submenu "Select Orb" select-orb-menu))
-        )
-      (debug-menu-append-item orb-placer-menu (new-dm-func "Print Selected Orb Position" #f orb-placer-print-selected))
-      (debug-menu-append-item orb-placer-menu (new-dm-func "Print All Orb Positions" #f orb-placer-print-all))
+;;     ;; orb-placer menu
+;;     (let ((orb-placer-menu (new 'debug 'debug-menu ctx "Orb Placer")))
+;;       (debug-menu-append-item orb-placer-menu (new-dm-bool "Edit Mode?" *orb-placer-enabled?* dm-boolean-toggle-pick-func))
+;;       (debug-menu-append-item orb-placer-menu (new-dm-func "Add Orb" #f orb-placer-add))
+;;       (let ((select-orb-menu (new 'debug 'debug-menu ctx "Select Orb")))
+;;         (set! *orb-placer-select-menu* select-orb-menu)
+;;         ;; populated on orb add
+;;         (debug-menu-append-item orb-placer-menu (new-dm-submenu "Select Orb" select-orb-menu))
+;;         )
+;;       (debug-menu-append-item orb-placer-menu (new-dm-func "Print Selected Orb Position" #f orb-placer-print-selected))
+;;       (debug-menu-append-item orb-placer-menu (new-dm-func "Print All Orb Positions" #f orb-placer-print-all))
 
-      (debug-menu-append-item modding-tools-menu (new-dm-submenu "Orb Placer" orb-placer-menu))
+;;       (debug-menu-append-item modding-tools-menu (new-dm-submenu "Orb Placer" orb-placer-menu))
+;;       )
+;;     (new-dm-submenu "Modding Tools" modding-tools-menu)
+;;     )
+;;   )
+
+(defun-debug debug-menu-make-speedrun-tools-menu ((ctx debug-menu-context))
+  (let ((speedrun-tools-menu (new 'debug 'debug-menu ctx "Speedrun Tools")))
+    ;; general stuff
+    (debug-menu-append-item speedrun-tools-menu (new-dm-bool "Show blocking-planes" *show-blocking-planes?* dm-boolean-toggle-pick-func))
+
+    ;; specific submenus
+    (let ((citadel-hops-menu (new 'debug 'debug-menu ctx "Citadel Hops")))
+      (debug-menu-append-item citadel-hops-menu (new-dm-bool "Show blocking-planes" *show-blocking-planes?* dm-boolean-toggle-pick-func))
+      ;; (debug-menu-append-item citadel-hops-menu (new-dm-bool "Show bottom-height (death planes)" *show-bottom-height?* dm-boolean-toggle-pick-func))
+      (debug-menu-append-item citadel-hops-menu (new-dm-bool "Show Green Sage cutscene plane" *show-greensage-cutscene-plane?* dm-boolean-toggle-pick-func))
+      
+      (debug-menu-append-item speedrun-tools-menu (new-dm-submenu "Citadel Hops" citadel-hops-menu))
       )
-    (new-dm-submenu "Modding Tools" modding-tools-menu)
+    (new-dm-submenu "Speedrun Tools" speedrun-tools-menu)
     )
   )
 
 (when (-> *debug-menu-context* root-menu)
-  (debug-menu-append-item (-> *debug-menu-context* root-menu) (debug-menu-make-modding-tools-menu *debug-menu-context*))
+  ;; (debug-menu-append-item (-> *debug-menu-context* root-menu) (debug-menu-make-modding-tools-menu *debug-menu-context*))
+  (debug-menu-append-item (-> *debug-menu-context* root-menu) (debug-menu-make-speedrun-tools-menu *debug-menu-context*))
   )

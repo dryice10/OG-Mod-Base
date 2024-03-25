@@ -7,6 +7,7 @@
 
 ;; DECOMP BEGINS
 
+(define *show-blocking-planes?* #f)
 (deftype blocking-plane (process-drawable)
   ()
   (:states
@@ -22,8 +23,8 @@
 
 (defstate blocking-plane-idle (blocking-plane)
   :trans (behavior ()
-    (if (and *debug-segment* *display-path-marks*)
-      (logclear! (-> self draw status) (draw-status skip-bones))  ;; in debug, show blocking planes when path marks on
+    (if (and *debug-segment* *show-blocking-planes?*)
+      (logclear! (-> self draw status) (draw-status skip-bones))  ;; in debug, show blocking planes when enabled
       (logior! (-> self draw status) (draw-status skip-bones))
       )
     )
