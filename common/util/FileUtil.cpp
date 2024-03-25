@@ -22,7 +22,7 @@
 // This disables the use of PCLMULQDQ which is probably ok, but let's just be safe and disable it
 // because nobody will care if png compression is 10% slower.
 #define FPNG_NO_SSE 1
-#include "third-party/fmt/core.h"
+#include "fmt/core.h"
 #include "third-party/fpng/fpng.cpp"
 #include "third-party/fpng/fpng.h"
 #include "third-party/lzokay/lzokay.hpp"
@@ -88,9 +88,21 @@ fs::path get_user_memcard_dir(GameVersion game_version) {
   return get_user_config_dir() / game_version_name / "saves";
 }
 
+fs::path get_user_screenshots_dir(GameVersion game_version) {
+  auto game_version_name = game_version_names[game_version];
+  return get_user_config_dir() / game_version_name / "screenshots";
+}
+
 fs::path get_user_misc_dir(GameVersion game_version) {
   auto game_version_name = game_version_names[game_version];
   return get_user_config_dir() / game_version_name / "misc";
+}
+
+fs::path get_user_features_dir(GameVersion game_version) {
+  auto game_version_name = game_version_names[game_version];
+  auto path = get_user_config_dir() / game_version_name / "features";
+  file_util::create_dir_if_needed(path);
+  return path;
 }
 
 struct {
@@ -155,28 +167,19 @@ std::optional<std::string> try_get_project_path_from_path(const std::string& pat
   // }
   // return std::string(path).substr(
   //     0, pos + 11);  // + 12 to include "/jak-project" in the returned filepath
-  std::string current_path = path;
-  lg::info("Current path in loop - {}", current_path);
-  while (!current_path.empty()) {
-    if (current_path == ".github") {
+  fs::path current_path = fs::path(path);
+  while (true) {
+    lg::info("Current path in loop - {}", current_path.string());
+    if (fs::exists(current_path / ".github")) {
+      lg::info("Project path found - {}", current_path.string());
+      return current_path.string();
+    }
+    if (!current_path.has_parent_path()){
       lg::info("No parent folder found");
-      return {};  // No parent folder found
+      return {};
     }
-    std::size_t last_slash_pos = current_path.rfind('\\');
-    if (last_slash_pos == std::string::npos) {
-      lg::info("No parent folder found");
-      return {};  // No parent folder found
-    }
-    current_path = current_path.substr(0, last_slash_pos);
-    lg::info("Current path in loop - {}", current_path);
-    if (fs::exists(current_path + "/.github")) {
-      lg::info("Project path found - {}", current_path);
-      return current_path;
-
-
-    }
-  
-}
+    current_path = current_path.parent_path();
+  }
 }
 
 /*!
@@ -420,7 +423,7 @@ std::string split_path_at(const fs::path& path, const std::vector<std::string>& 
     split_str += folder + "/";
 #endif
   }
-  const auto& path_str = path.u8string();
+  const auto& path_str = path.string();
   return path_str.substr(path_str.find(split_str) + split_str.length());
 }
 
@@ -675,6 +678,9 @@ std::vector<fs::path> find_files_in_dir(const fs::path& dir, const std::regex& p
 
 std::vector<fs::path> find_files_recursively(const fs::path& base_dir, const std::regex& pattern) {
   std::vector<fs::path> files = {};
+  if (!fs::exists(base_dir)) {
+    return files;
+  }
   for (auto& p : fs::recursive_directory_iterator(base_dir)) {
     if (p.is_regular_file()) {
       if (std::regex_match(p.path().filename().string(), pattern)) {
@@ -731,15 +737,33 @@ void copy_file(const fs::path& src, const fs::path& dst) {
 std::string make_screenshot_filepath(const GameVersion game_version, const std::string& name) {
   std::string file_name;
   if (name.empty()) {
-    file_name = fmt::format("{}_{}.png", version_to_game_name(game_version),
-                            str_util::current_local_timestamp_no_colons());
+    file_name = fmt::format("{}.png", str_util::current_local_timestamp_no_colons());
   } else {
-    file_name = fmt::format("{}_{}_{}.png", version_to_game_name(game_version), name,
-                            str_util::current_local_timestamp_no_colons());
+    file_name = fmt::format("{}.png", name);
   }
-  const auto file_path = file_util::get_file_path({"screenshots", file_name});
+  const auto file_path = get_user_screenshots_dir(game_version) / file_name;
   file_util::create_dir_if_needed_for_file(file_path);
-  return file_path;
+  return file_path.string();
+}
+
+std::string get_majority_file_line_endings(const std::string& file_contents) {
+  size_t lf_count = 0;
+  size_t crlf_count = 0;
+
+  for (size_t i = 0; i < file_contents.size(); ++i) {
+    if (file_contents[i] == '\n') {
+      if (i > 0 && file_contents[i - 1] == '\r') {
+        crlf_count++;
+      } else {
+        lf_count++;
+      }
+    }
+  }
+
+  if (crlf_count > lf_count) {
+    return "\r\n";
+  }
+  return "\n";
 }
 
 }  // namespace file_util
