@@ -96,6 +96,7 @@
   (let ((speedrun-tools-menu (new 'debug 'debug-menu ctx "Speedrun Tools")))
     ;; general stuff
     (debug-menu-append-item speedrun-tools-menu (new-dm-bool "Show blocking-planes" *show-blocking-planes?* dm-boolean-toggle-pick-func))
+    (debug-menu-append-item speedrun-tools-menu (new-dm-func "Input Display" #f (lambda () (not! (-> *speedrun-info* show-input-display?)))))
 
     ;; specific submenus
     (let ((citadel-hops-menu (new 'debug 'debug-menu ctx "Citadel Hops")))

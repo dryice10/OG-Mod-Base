@@ -19,7 +19,7 @@ The dpad press displays text and changes the edit mode
 Down lets you edit buttons, left lets you edit the sticks, right for dpad, up to stop editing
 |#
 
-;; *show-input-display* is the on/off switch controlling whether this is displayed
+;; (-> *speedrun-info* show-input-display?) is the on/off switch controlling whether this is displayed
 
 ;
 ;Button stuff
