@@ -6,7 +6,6 @@
 ;; dgos: L1, FIC, LAV, MIS, OGR, RACERP, ROL
 
 (define-extern *allow-zoomer-anywhere* symbol)
-
 (define-extern blocking-plane-destroy (function none))
 (define-extern blocking-plane-spawn (function curve-control none :behavior process))
 
@@ -242,13 +241,25 @@
                 (set! (-> v1-25 height) (the float 80))
                 )
               (set! (-> gp-0 flags) (font-flags shadow kerning large))
+              (if (and (= (-> (level-get-target-inside *level*)name) 'firecanyon)  (= (-> *speedrun-info* category) (speedrun-category low-collect-prac)) )
+              (print-game-text (lookup-text! *common-text* (text-id press-to-warp) #f)  gp-0 #f 128 22)
               (print-game-text (lookup-text! *common-text* (text-id press-to-use) #f) gp-0 #f 128 22)
               )
+
+              (if (and
+                    (not (= (-> *game-info* current-continue) (get-continue-by-name *game-info* "firecanyon-end")))
+                    (= (-> *speedrun-info* category) (speedrun-category low-collect-prac))
+                    (cpad-pressed? 0 circle)
+                    (= (-> (level-get-target-inside *level*)name) 'firecanyon))
+                        (send-event *target* 'continue (get-continue-by-name *game-info* "firecanyon-end")
+                  ))
+
+              )
             (if *allow-zoomer-anywhere* ;; if "self" is passed instead of #f, deloading level/zoomer will crash
-              (if (and (or (cpad-pressed? 0 circle) (= (-> self condition) 4)) (send-event *target* 'change-mode 'racing #f))
+              (if (and (or (not (!= (-> *game-info* current-continue) (get-continue-by-name *game-info* "firecanyon-end"))) (!= (-> *speedrun-info* category) (speedrun-category low-collect-prac))) (or (cpad-pressed? 0 circle) (= (-> self condition) 4)) (send-event *target* 'change-mode 'racing #f))
                   (go-virtual pickup (the-as (state collectable) (method-of-object self wait-for-return)))
                   )
-              (if (and (or (cpad-pressed? 0 circle) (= (-> self condition) 4)) (send-event *target* 'change-mode 'racing self))
+              (if (and (or (!=  (-> *speedrun-info* category) (speedrun-category low-collect-prac)) (not (!= (-> *game-info* current-continue) (get-continue-by-name *game-info* "firecanyon-end")))) (or (cpad-pressed? 0 circle) (= (-> self condition) 4)) (send-event *target* 'change-mode 'racing self))
                   (go-virtual pickup (the-as (state collectable) (method-of-object self wait-for-return)))
                   )
               )
