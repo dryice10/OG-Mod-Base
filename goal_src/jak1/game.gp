@@ -472,6 +472,7 @@
    :deps ;; no idea what these depend on, make it depend on the whole engine
    ("$OUT/obj/ticky.o")
 
+
    "village_common/villagep-obs.gc"
    "village_common/oracle.gc"
 
@@ -1727,7 +1728,7 @@
  :deps
  ("$OUT/obj/display.o"
   "$OUT/obj/decomp-h.o")
- 
+
  "engine/connect.gc"
  "ui/text-h.gc"
  "game/settings-h.gc"

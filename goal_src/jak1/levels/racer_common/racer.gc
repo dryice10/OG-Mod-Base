@@ -6,7 +6,7 @@
 ;; dgos: L1, FIC, LAV, MIS, OGR, RACERP, ROL
 
 (define-extern *allow-zoomer-anywhere* symbol)
-
+(define-extern *speedrun-info* speedrun-info-jak1)
 (define-extern blocking-plane-destroy (function none))
 (define-extern blocking-plane-spawn (function curve-control none :behavior process))
 
@@ -242,15 +242,32 @@
                 (set! (-> v1-25 height) (the float 80))
                 )
               (set! (-> gp-0 flags) (font-flags shadow kerning large))
-              (print-game-text (lookup-text! *common-text* (text-id press-to-use) #f) gp-0 #f 128 22)
-              )
-            (if *allow-zoomer-anywhere* ;; if "self" is passed instead of #f, deloading level/zoomer will crash
-              (if (and (or (cpad-pressed? 0 circle) (= (-> self condition) 4)) (send-event *target* 'change-mode 'racing #f))
-                  (go-virtual pickup (the-as (state collectable) (method-of-object self wait-for-return)))
+
+              (cond
+                ((and (= (-> *speedrun-info* category) (speedrun-category low-collect-prac))
+                      (= (-> (level-get-target-inside *level*) name) 'firecanyon)
+                      (!= (-> *game-info* current-continue) (get-continue-by-name *game-info* "firecanyon-end"))
+                      )
+                  ;; skip FCS for low-collect-prac
+                  (print-game-text (lookup-text! *common-text* (text-id press-to-warp) #f)  gp-0 #f 128 22)
+                  (if (cpad-pressed? 0 circle)
+                    (send-event *target* 'continue (get-continue-by-name *game-info* "firecanyon-end"))
+                    )
                   )
-              (if (and (or (cpad-pressed? 0 circle) (= (-> self condition) 4)) (send-event *target* 'change-mode 'racing self))
-                  (go-virtual pickup (the-as (state collectable) (method-of-object self wait-for-return)))
+                (*allow-zoomer-anywhere* ;; if "self" is passed instead of #f, deloading level/zoomer will crash
+                  (print-game-text (lookup-text! *common-text* (text-id press-to-use) #f) gp-0 #f 128 22)
+                  (if (and (or (cpad-pressed? 0 circle) (= (-> self condition) 4)) (send-event *target* 'change-mode 'racing #f))
+                    (go-virtual pickup (the-as (state collectable) (method-of-object self wait-for-return)))
+                    )
                   )
+                (else
+                  ;; vanilla
+                  (print-game-text (lookup-text! *common-text* (text-id press-to-use) #f) gp-0 #f 128 22)
+                  (if (and (or (cpad-pressed? 0 circle) (= (-> self condition) 4)) (send-event *target* 'change-mode 'racing self))
+                    (go-virtual pickup (the-as (state collectable) (method-of-object self wait-for-return)))
+                    )
+                  )
+                )
               )
             )
           )
