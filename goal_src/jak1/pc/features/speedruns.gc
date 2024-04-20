@@ -1,7 +1,14 @@
 ;;-*-Lisp-*-
 (in-package goal)
 
-(define *speedrun-info* (new 'static 'speedrun-info-jak1 :should-display? #t :should-display-deload-info? #f :needs-post-blackout-setup? #f :show-input-display? #f))
+(define *speedrun-info* (new 'static 'speedrun-info-jak1 
+    :should-display? #t 
+    :should-display-idle-deload-info? #f 
+    :should-display-plant-deload-info? #f 
+    :needs-post-blackout-setup? #f 
+    :show-input-display? #f
+    )
+  )
 
 (define *last-speedrun-practice-option* (speedrun-practice-option none))
 (define *practice-spawn-post-init* (the-as (function none) #f))
@@ -518,8 +525,8 @@
     )
   )
 
-(defun draw-deload-continue-info ()
-  (when (and (-> *speedrun-info* should-display-deload-info?)
+(defun draw-idle-deload-info ()
+  (when (and (-> *speedrun-info* should-display-idle-deload-info?)
              (not (paused?)))
     (let ((y-offset (if (-> *speedrun-info* should-display?) 8 4))
           (backup-lvl
@@ -999,13 +1006,15 @@
   (none)
   )
 
+(define-extern draw-plant-deload-info (function none))
 (defun speedrun-mode-update ()
   "A per frame update for speedrunning related stuff"
   (when (-> *pc-settings* speedrunner-mode?)
     ;; Update auto-splitter
     (update-autosplit-info-jak1)
     ;; Draw info to the screen
-    (draw-deload-continue-info)
+    (draw-idle-deload-info)
+    (draw-plant-deload-info)
     (speedrun-draw-settings)
     ;;Disable any active cheats
     (set! (-> *pc-settings* cheats) (the-as pc-cheats #x0))

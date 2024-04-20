@@ -21,6 +21,111 @@
     ;; Begin function defintions.
     ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun draw-plant-deload-info ()
+  (when (and (-> *speedrun-info* should-display-plant-deload-info?)
+             (not (paused?)))
+    (let ((y-offset (if (-> *speedrun-info* should-display?) 7 3))
+          (hp (the happy-plant (process-by-ename "happy-plant-1")))
+          )
+      (with-dma-buffer-add-bucket ((buf (-> (current-frame) global-buf))
+                                        (bucket-id subtitle))
+        (cond
+          (hp
+            ;; happy-plant visible, determine next plant
+            (when (-> hp alt-actor)
+              (let* ((gp-0 (-> hp alt-actor extra process))
+                     (cur-dp (if (and (nonzero? gp-0) (type-type? (-> gp-0 type) dark-plant))
+                              (the dark-plant gp-0)
+                              ))
+                     (next-dp (the dark-plant #f))
+                     (dp-done? 0)
+                     )
+                ;; deconstructed (dark-plants-all-done) function
+                (when cur-dp
+                  ;; special case for first in list
+                  (if (!= (-> cur-dp state) dark-plant-gone)  ;; current isnt gone
+                    (set! dp-done? -1)
+                    )
+                  (if (zero? (-> cur-dp num-alts))  ;; no next
+                    (set! dp-done? 1)
+                    (set! next-dp (the-as dark-plant (-> cur-dp alts 0 extra process)))
+                    )
+                  ;; loop thru list
+                  (while (zero? dp-done?)
+                    (cond
+                      ((!= (-> next-dp state) dark-plant-gone)  ;; current isnt gone
+                        (set! dp-done? -1)
+                        )
+                      ((zero? (-> next-dp num-alts))  ;; no next
+                        (set! dp-done? 1)
+                        )
+                      (else 
+                        (let ((tmp (the-as dark-plant (-> next-dp alts 0 extra process))))
+                          (cond
+                            ((not tmp)  ;; next doesnt exist
+                              (set! dp-done? 1)
+                              )
+                            ((= tmp cur-dp) ;; next points to itself
+                              (set! dp-done? 1)
+                              )
+                            (else ;; moving to next
+                              (set! cur-dp next-dp)
+                              (set! next-dp tmp)
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+
+                (add-debug-x
+                  #t
+                  (bucket-id debug-no-zbuf)
+                  (-> cur-dp root trans)
+                  (new 'static 'rgba :r #x80 :g #xff :b #x80 :a #x80)
+                  )
+                
+                (cond
+                  (next-dp
+                    ;; next dark-plant is spawned
+                    (draw-string-xy (string-format "happy-plant-1 spawned ~%cur ~S ~S ~%next ~S ~S"
+                                                  (-> cur-dp name) (-> cur-dp state name)
+                                                  (-> next-dp name) (-> next-dp state name)
+                                                  )
+                                  buf 0 (- 220 (* 8 y-offset)) (font-color flat-yellow) (font-flags shadow kerning))
+
+                    (add-debug-x
+                      #t
+                      (bucket-id debug-no-zbuf)
+                      (-> next-dp root trans)
+                      (new 'static 'rgba :r #xff :g #x00 :b #x00 :a #x80)
+                      )
+                    )
+                  (else
+                    ;; next dark-plant is depspawned
+                    (draw-string-xy (string-format "happy-plant-1 spawned ~%cur ~S ~S ~%next despawned!"
+                                                  (-> cur-dp name) (-> cur-dp state name)
+                                                  )
+                                  buf 0 (- 220 (* 8 y-offset)) (font-color flat-yellow) (font-flags shadow kerning))
+                    )
+                  )
+                )
+              )
+            )
+          (else
+            ;; happy-plant not visible
+            
+            (draw-string-xy "happy-plant-1 despawned"
+                            buf 0 (- 220 (* 8 y-offset)) (font-color flat-yellow) (font-flags shadow kerning))
+            )
+          )
+        )
+      )
+    )
+  (none)
+  )
+
     (defun runs-every-frame ()
       ;;(increase-power-cell-by-one) This is a call to increase-power-cell-by-one defined in mod-common-functions.gc
       

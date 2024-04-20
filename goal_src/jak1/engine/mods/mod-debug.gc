@@ -95,10 +95,11 @@
 (defun-debug debug-menu-make-speedrun-tools-menu ((ctx debug-menu-context))
   (let ((speedrun-tools-menu (new 'debug 'debug-menu ctx "Speedrun Tools")))
     ;; general stuff
-    (debug-menu-append-item speedrun-tools-menu (new-dm-bool "Show blocking-planes" *show-blocking-planes?* dm-boolean-toggle-pick-func))
     (debug-menu-append-item speedrun-tools-menu (new-dm-func "Input Display" #f (lambda () (not! (-> *speedrun-info* show-input-display?)))))
+    (debug-menu-append-item speedrun-tools-menu (new-dm-bool "Show blocking-planes" *show-blocking-planes?* dm-boolean-toggle-pick-func))
+    (debug-menu-append-item speedrun-tools-menu (new-dm-func "Idle Deload Display" #f (lambda () (not! (-> *speedrun-info* should-display-idle-deload-info?)))))
+    (debug-menu-append-item speedrun-tools-menu (new-dm-func "Plant Deload Display" #f (lambda () (not! (-> *speedrun-info* should-display-plant-deload-info?)))))
 
-    ;; specific submenus
     (let ((citadel-hops-menu (new 'debug 'debug-menu ctx "Citadel Hops")))
       (debug-menu-append-item citadel-hops-menu (new-dm-bool "Show blocking-planes" *show-blocking-planes?* dm-boolean-toggle-pick-func))
       ;; (debug-menu-append-item citadel-hops-menu (new-dm-bool "Show bottom-height (death planes)" *show-bottom-height?* dm-boolean-toggle-pick-func))

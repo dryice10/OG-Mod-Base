@@ -1111,7 +1111,7 @@
   (set! (-> *misc-options* 1 value-to-modify) (&-> *pc-settings* discord-rpc?))
   (set! (-> *misc-options* 2 value-to-modify) (&-> *pc-settings* skip-movies?))
   (set! (-> *misc-options* 3 value-to-modify) (&-> *pc-settings* speedrunner-mode?))
-  (set! (-> *misc-options* 4 value-to-modify) (&-> *speedrun-info* should-display-deload-info?))
+  (set! (-> *misc-options* 4 value-to-modify) (&-> *speedrun-info* should-display-idle-deload-info?))
   (set! (-> *misc-options* 5 value-to-modify) (&-> *speedrun-info* show-input-display?))
 
   (set! (-> *camera-options* 0 value-to-modify) (&-> *pc-settings* first-camera-h-inverted?))
