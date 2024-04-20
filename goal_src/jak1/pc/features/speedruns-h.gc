@@ -76,5 +76,3 @@
   (lavawalk-2)
   (lavawalk-3)
   )
-
-  (define *speedrun-info* (new 'static 'speedrun-info-jak1 :should-display? #t :should-display-deload-info? #f :needs-post-blackout-setup? #f :show-input-display? #f))
