@@ -757,17 +757,11 @@
                              :disp1 #f
                              )
     )
-(define *tmp-flut?* #f)
-(define *tmp-zoomer?* #f)
 (define *full-hp?* #f)
 
 (defun custom-reset-multi-post-init ()
   (generic-post-init)
   (when *full-hp?* (full-hp))
-  (cond
-    (*tmp-flut?* (get-on-flutflut))
-    (*tmp-zoomer?* (get-on-zoomer))
-    )
   (none)
   )
 
@@ -848,7 +842,6 @@
   )
 
 (defun speedrun-practice-gondola-flut-start-run ()
-  (set! *practice-spawn-post-init* get-on-flutflut)
   (initialize! *game-info* 'game (the-as game-save #f) "snow-gondola-flut")
   (set! (-> *game-info* current-continue) (get-continue-by-name *game-info* "snow-gondola-flut"))
   (speedrun-reset-common-settings)
@@ -940,18 +933,18 @@
         (vector-copy! (-> *tmp-continue-point* camera-trans) (-> *camera-combiner* trans))
         (camera-rot-copy! *tmp-continue-point* (-> *camera-combiner* inv-camera-rot))
 
+        ;; flag init
+        (set! (-> *tmp-continue-point* flags) (continue-flags speedrun))
         (set! *full-hp?* (and (!= *target* #f)
                       (= (-> *target* fact health) 3.0)
                       (= (-> *target* fact eco-pill) 50.0)
                       ))
-        (set! *tmp-flut?* #f)
-        (set! *tmp-zoomer?* #f)
         (case (-> *target* state)
           ((target-flut-stance)
-            (set! *tmp-flut?* #t)
+            (logior! (-> *tmp-continue-point* flags) (continue-flags flut))
             )
           ((target-racing)
-            (set! *tmp-zoomer?* #t)
+            (logior! (-> *tmp-continue-point* flags) (continue-flags racer))
             )
           )
         (sound-play "select-menu")

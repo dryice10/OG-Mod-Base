@@ -109,6 +109,8 @@
   (game-start)
   (sage-ecorocks)
   (speedrun)
+  (flut)
+  (racer)
   )
 
 ;; static data for a continue point

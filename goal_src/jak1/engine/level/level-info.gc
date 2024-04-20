@@ -1405,11 +1405,11 @@
       (new 'static 'continue-point
         :name "snow-gondola-flut"
         :level 'snow
-        :flags (continue-flags speedrun)
-        :trans (new 'static 'vector :x 4171535.2500 :y 981505.9375 :z -14309910.0000 :w 1.0)
-        :quat (new 'static 'quaternion :y 0.7906 :w -0.6122)
-        :camera-trans (new 'static 'vector :x 4117670.2500 :y 1006667.1875 :z -14330434.0000 :w 1.0)
-        :camera-rot (new 'static 'array float 9 0.3559 0.0000 -0.9344  0.1569 0.9858 0.0597  0.9212 -0.1679 0.3509)
+        :flags (continue-flags speedrun flut)
+        :trans (new 'static 'vector :x (meters 1017.3229) :y (meters 240.3061) :z (meters -3477.9301) :w 1.0)
+        :quat (new 'static 'quaternion :y 0.8294 :w 0.5586)
+        :camera-trans (new 'static 'vector :x (meters 1004.9108) :y (meters 245.4560) :z (meters -3476.4377) :w 1.0)
+        :camera-rot (new 'static 'array float 9 -0.1197 -0.0000 -0.9928 0.1212 0.9925 -0.0146 0.9853 -0.1221 -0.1188)
         :load-commands '()
         :vis-nick 'sno
         :lev0 'snow
