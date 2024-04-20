@@ -233,6 +233,11 @@
       ;; spawn at the geyser warp gate checkpoint
       (initialize! *game-info* 'game (the-as game-save #f) "intro-start")
       )
+    (((speedrun-category low-collect-prac))
+      ;; spawn at the geyser warp gate checkpoint
+
+      (initialize! *game-info* 'game (the-as game-save #f) "game-start")
+      )
     (else
       (format 0 "start-speedrun: unrecognized category ~S~%" (enum->string speedrun-category (-> *speedrun-info* category)))
       )
@@ -408,6 +413,10 @@
         )
       (((speedrun-category all-cutscenes))
         ;; no post-blackout actions needed
+        )
+      (((speedrun-category low-collect-prac))
+        ;; skip keira intro cutscene a
+        (close-specific-task! (game-task firecanyon-assistant) (task-status need-reward-speech))
         )
       (else
         (format 0 "setup-speedrun-post-blackout: unrecognized category ~S~%" (enum->string speedrun-category (-> *speedrun-info* category)))
@@ -759,7 +768,7 @@
   (when (-> *tmp-continue-point* level)
     (set! *practice-spawn-post-init* custom-reset-multi-post-init)
     ;; fully reset game if r2 held too
-    (if (cpad-hold? 0 r2)  
+    (if (cpad-hold? 0 r2)
       (initialize! *game-info* 'game (the-as game-save #f) "default")
       )
     ;; store last real checkpoint to restore later
