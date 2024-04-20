@@ -85,6 +85,7 @@
                   (-> cur-dp root trans)
                   (new 'static 'rgba :r #x80 :g #xff :b #x80 :a #x80)
                   )
+                (set! (-> cur-dp draw color-mult x) 5.0)
                 
                 (cond
                   (next-dp
@@ -101,6 +102,9 @@
                       (-> next-dp root trans)
                       (new 'static 'rgba :r #xff :g #x00 :b #x00 :a #x80)
                       )
+                    (if (= (-> cur-dp state) dark-plant-gone)
+                      (set! (-> next-dp draw color-mult x) 5.0) ;; highlight next if cur is gone
+                      )
                     )
                   (else
                     ;; next dark-plant is depspawned
@@ -116,7 +120,7 @@
           (else
             ;; happy-plant not visible
             
-            (draw-string-xy "happy-plant-1 despawned"
+            (draw-string-xy (string-format "~%~%happy-plant-1 despawned")
                             buf 0 (- 220 (* 8 y-offset)) (font-color flat-yellow) (font-flags shadow kerning))
             )
           )

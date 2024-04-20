@@ -175,6 +175,14 @@
     )
   )
 
+(defun dark-plant-reset-color-mult ((arg0 dark-plant))
+  ;; reset color from plant deload display
+  (set! (-> arg0 draw color-mult x) 1.0)
+  (when (nonzero? (-> arg0 num-alts))
+    (set! (-> (the-as dark-plant (-> arg0 alts 0 extra process)) draw color-mult x) 1.0)
+    )
+  (none)
+  )
 
 (defskelgroup *dark-plant-sg* dark-plant dark-plant-lod0-jg dark-plant-idle-ja
               ((dark-plant-lod0-mg (meters 999999)))
@@ -243,6 +251,7 @@
     (logclear! (-> self draw status) (draw-status hidden))
     (sound-play "darkvine-grow")
     (ja-no-eval :group! dark-plant-sprout-ja :num! (seek!) :frame-num 0.0)
+    (dark-plant-reset-color-mult self)
     (until (ja-done? 0)
       (suspend)
       (ja :num! (seek!))
@@ -363,6 +372,7 @@
       (set! (-> gp-0 frame-num) (* (rand-float-gen) (the float (ja-num-frames 0))))
       (joint-control-channel-group! gp-0 (the-as art-joint-anim dark-plant-idle-ja) num-func-seek!)
       )
+    (dark-plant-reset-color-mult self)
     (until (ja-done? 0)
       (suspend)
       (ja :num! (seek!))

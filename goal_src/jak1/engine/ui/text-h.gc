@@ -832,8 +832,9 @@
   ;; practice mod additions
   (checkpoint-options           #x1681)
   (skip-options                 #x1682)
-  (deload-display               #x1683)
+  (idle-deload-display          #x1683)
   (input-display                #x1684)
+  (plant-deload-display         #x1685)
 
   (practice-lts-old             #x1700)
   (practice-lts-new             #x1701)
