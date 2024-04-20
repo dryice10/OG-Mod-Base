@@ -414,7 +414,7 @@
       (((speedrun-category all-cutscenes))
         ;; no post-blackout actions needed
         )
-        (((speedrun-category low-collect-prac))
+      (((speedrun-category low-collect-prac))
         ;; skip keira intro cutscene a
         (close-specific-task! (game-task firecanyon-assistant) (task-status need-reward-speech))
         )
