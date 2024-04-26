@@ -1,0 +1,65 @@
+(define show-speedometer? #f)
+
+(defun j1-speedometer-on ()
+  (when (not (process-by-name 'j1-speedometer *active-pool*))
+  ;process-spawn-function, spawns a process that runs the function you give it
+  (process-spawn-function process :name 'j1-speedometer
+    ;This lambda is our function
+    (lambda :behavior process ()
+    ;Code before the loop runs once on process spawn
+    ;
+    (let ((bar-x-pos 4)
+         (bar-y-pos 110)
+        (bar-w 87)
+        (bar-h 7)
+        (bar-color (new 'static 'rgba :r 255))
+        (jak-velocity (-> *target* control transv))
+        )
+
+      ;Loop runs once per frame while process is active
+      (loop
+
+        ;Start a bucket thing block so we can use draw functions
+        (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) global-buf)) (bucket-id debug-no-zbuf))
+          (draw-sprite2d-xy testbuf bar-x-pos bar-y-pos bar-w bar-h *color-black*) ;background bar
+          (draw-sprite2d-xy testbuf (+ 1 bar-x-pos) (+ 1 bar-y-pos) 
+            (the int (/ (vector-xz-length jak-velocity) 2048)) (- bar-h 2) bar-color) ;speed bar
+              
+          (draw-string-xy-scaled (string-format "XZ V: ~M" (vector-xz-length jak-velocity))
+              testbuf (+ 2 bar-x-pos) (+ 1 bar-y-pos) (the font-color 12) (font-flags shadow kerning) 0.5)
+          (draw-string-xy-scaled (string-format "XYZ V: ~M" (vector-length jak-velocity))
+              testbuf (+ 1 bar-x-pos) (+ 7 bar-y-pos) (the font-color 12) (font-flags shadow kerning) 0.5)
+
+          (cond
+            ((<= (vector-xz-length jak-velocity) (meters 12.0)) ;jak moving is ~10m, downhill ~12m
+              (set! bar-color *color-dark-green*)
+            )
+            ((< (vector-xz-length jak-velocity) (meters 30.0)) ;zoomer speed no eco
+              (set! bar-color *color-orange*)
+            )
+            ((< (vector-xz-length jak-velocity) (meters 42.0)) ;full eco'd zoomer is ~42.5m
+              (set! bar-color *color-red*)
+            )
+            (else
+              (set! bar-color *color-blue*) ;hell yeah brother
+            )
+          )
+
+        )
+
+      ;Processes should suspend themselves, the loop will resume next frame
+      (suspend)
+      )
+    )
+    )
+  )
+  )  
+;Lisp returns the last form as the function return
+(none)
+)
+
+
+(defun j1-speedometer-off ()
+  "Kill the process"
+  (kill-by-name 'j1-speedometer *active-pool*)
+  )
