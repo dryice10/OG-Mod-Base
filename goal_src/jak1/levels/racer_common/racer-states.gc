@@ -1,5 +1,13 @@
 ;;-*-Lisp-*-
 (in-package goal)
+(bundles "FIC.DGO" "LAV.DGO" "MIS.DGO" "OGR.DGO" "ROL.DGO")
+
+(require "levels/racer_common/target-racer.gc")
+(require "engine/common-obs/babak.gc")
+(require "engine/target/target.gc")
+(require "levels/racer_common/racer-part.gc")
+(require "engine/common-obs/water.gc")
+(require "engine/anim/joint-exploder.gc")
 
 ;; name: racer-states-FIC-LAV-MIS-OGR-ROL.gc
 ;; name in dgo: racer-states
@@ -220,6 +228,12 @@
     (set! (-> self racer speed-rotx) 0.25)
     (set! (-> self racer boost-curve) 0.0)
     (set! (-> self racer boost-level) 0.0)
+    ;; hack to give 6 blue eco for citihops practice checkpoint
+    (when (name= (-> *game-info* current-continue name) 'lavatube-citihops)
+      (format 0 "setting max blue eco for racer~%")
+      (set! (-> self racer boost-level) (-> *RACER-bank* boost-level-max))
+      (set-time! (-> self racer boost-time))
+      )
     (set! (-> self racer boost-target) 0.0)
     (set! (-> self racer boost-output) 0.0)
     (set! (-> self racer boost-time) 0)

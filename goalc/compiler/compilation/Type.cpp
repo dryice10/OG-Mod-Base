@@ -3,6 +3,7 @@
 #include "common/type_system/deftype.h"
 #include "common/type_system/state.h"
 #include "common/util/math_util.h"
+#include "common/util/string_util.h"
 
 #include "goalc/compiler/Compiler.h"
 #include "goalc/emitter/CallingConvention.h"
@@ -89,6 +90,33 @@ RegVal* Compiler::compile_get_method_of_object(const goos::Object& form,
     }
   }
 
+  if (m_settings.check_for_requires) {
+    std::vector<symbol_info::SymbolInfo*> symbol_info =
+        m_symbol_info.lookup_exact_method_name(method_info.name, compile_time_type.base_type());
+    // TODO - check for virtual state requirement, if i could track the defining form!
+    // if (symbol_info.empty()) {
+    //  // maybe it's a virtual state
+    //  symbol_info = m_symbol_info.lookup_exact_virtual_state_name(method_info.name,
+    //                                                              compile_time_type.base_type());
+    //  if (!symbol_info.empty()) {
+    //    int x = 0;
+    //  }
+    //}
+    if (!symbol_info.empty()) {
+      const auto& result = symbol_info.at(0);
+      if (result->m_def_location.has_value() &&
+          !env->file_env()->m_missing_required_files.contains(result->m_def_location->file_path) &&
+          env->file_env()->m_required_files.find(result->m_def_location->file_path) ==
+              env->file_env()->m_required_files.end() &&
+          !str_util::ends_with(result->m_def_location->file_path,
+                               env->file_env()->name() + ".gc")) {
+        lg::warn("Missing require in {} for {} over {}", env->file_env()->name(),
+                 result->m_def_location->file_path, method_info.name);
+        env->file_env()->m_missing_required_files.insert(result->m_def_location->file_path);
+      }
+    }
+  }
+
   method_info.type = method_info.type.substitute_for_method_call(compile_time_type.base_type());
   auto fe = env->function_env();
 
@@ -170,7 +198,24 @@ void Compiler::generate_field_description(const goos::Object& form,
     format_args.push_back(get_field_of_structure(type, reg, f.name(), env)->to_gpr(form, env));
   } else if (m_ts.tc(m_ts.make_typespec("structure"), f.type())) {
     // Structure
-    str_template += fmt::format("{}{}: #<{} @ #x~X>~%", tabs, f.name(), f.type().print());
+    auto ts = m_ts.lookup_type_no_throw(f.type());
+    if (ts) {
+      // try to use print method if the structure implements it
+      // TODO see if this can be done without a hardcoded list
+      std::vector<std::string> has_print = {
+          "vector",      "vector2",     "vector4w",           "vec4s",
+          "connectable", "connection",  "connection-minimap", "transform",
+          "transformq",  "entity-links"};
+      if (ts->get_parent() == "basic" ||
+          (ts->get_parent() == "structure" &&
+           std::find(has_print.begin(), has_print.end(), f.type().print()) != has_print.end())) {
+        str_template += fmt::format("{}{}: ~`{}`P~%", tabs, f.name(), f.type().print());
+      } else {
+        str_template += fmt::format("{}{}: #<{} @ #x~X>~%", tabs, f.name(), f.type().print());
+      }
+    } else {
+      str_template += fmt::format("{}{}: #<{} @ #x~X>~%", tabs, f.name(), f.type().print());
+    }
     format_args.push_back(get_field_of_structure(type, reg, f.name(), env)->to_gpr(form, env));
   } else if (f.type() == TypeSpec("seconds")) {
     // seconds
@@ -369,33 +414,32 @@ Val* Compiler::compile_deftype(const goos::Object& form, const goos::Object& res
   auto result = parse_deftype(rest, &m_ts, &m_global_constants);
 
   // look up the type name
-  auto kv = m_symbol_types.find(m_goos.intern_ptr(result.type.base_type()));
-  if (kv != m_symbol_types.end() && kv->second.base_type() != "type") {
+  auto kv = m_symbol_types.lookup(m_goos.intern_ptr(result.type.base_type()));
+  if (kv && kv->base_type() != "type") {
     // we already have something that's not a type with the same name, this is bad.
     lg::print("[Warning] deftype will redefine {} from {} to a type.\n", result.type.base_type(),
-              kv->second.print());
+              kv->print());
   }
   // remember that this is a type
-  m_symbol_types[m_goos.intern_ptr(result.type.base_type())] = m_ts.make_typespec("type");
+  m_symbol_types.set(m_goos.intern_ptr(result.type.base_type()), m_ts.make_typespec("type"));
 
   // add declared states
   for (auto& state : result.type_info->get_states_declared_for_type()) {
     auto interned_state_first = m_goos.intern_ptr(state.first);
-    auto existing_type = m_symbol_types.find(interned_state_first);
-    if (existing_type != m_symbol_types.end() && existing_type->second != state.second) {
+    auto existing_type = m_symbol_types.lookup(interned_state_first);
+    if (existing_type && *existing_type != state.second) {
       if (m_throw_on_define_extern_redefinition) {
         throw_compiler_error(form, "deftype would redefine the type of state {} from {} to {}.",
-                             state.first, existing_type->second.print(), state.second.print());
+                             state.first, existing_type->print(), state.second.print());
       } else {
         print_compiler_warning(
             "[Warning] deftype has redefined the type of state {}\npreviously: {}\nnow: "
             "{}\n",
-            state.first.c_str(), existing_type->second.print().c_str(),
-            state.second.print().c_str());
+            state.first.c_str(), existing_type->print().c_str(), state.second.print().c_str());
       }
     }
 
-    m_symbol_types[interned_state_first] = state.second;
+    m_symbol_types.set(interned_state_first, state.second);
     m_symbol_info.add_fwd_dec(state.first, form);
   }
 
@@ -424,7 +468,7 @@ Val* Compiler::compile_deftype(const goos::Object& form, const goos::Object& res
     }
   }
 
-  m_symbol_info.add_type(result.type.base_type(), form);
+  m_symbol_info.add_type(result.type.base_type(), result.type_info, form);
 
   // return none, making the value of (deftype..) unusable
   return get_none();
@@ -1427,12 +1471,12 @@ Val* Compiler::compile_declare_type(const goos::Object& form, const goos::Object
 
   m_ts.forward_declare_type_as(type_name.name_ptr, kind);
 
-  auto existing_type = m_symbol_types.find(type_name);
-  if (existing_type != m_symbol_types.end() && existing_type->second != TypeSpec("type")) {
+  auto existing_type = m_symbol_types.lookup(type_name);
+  if (existing_type && *existing_type != TypeSpec("type")) {
     throw_compiler_error(form, "Cannot forward declare {} as a type: it is already a {}",
-                         type_name.name_ptr, existing_type->second.print());
+                         type_name.name_ptr, existing_type->print());
   }
-  m_symbol_types[type_name] = TypeSpec("type");
+  m_symbol_types.set(type_name, TypeSpec("type"));
 
   return get_none();
 }
@@ -1448,7 +1492,11 @@ Val* Compiler::compile_defenum(const goos::Object& form, const goos::Object& res
   (void)form;
   (void)env;
 
-  parse_defenum(rest, &m_ts, {});
+  DefinitionMetadata def_metadata;
+  const auto new_enum = parse_defenum(rest, &m_ts, &def_metadata);
+  new_enum->m_metadata.definition_info = m_goos.reader.db.get_short_info_for(form);
+  m_symbol_info.add_enum(new_enum, form,
+                         def_metadata.docstring.has_value() ? def_metadata.docstring.value() : "");
   return get_none();
 }
 
@@ -1461,7 +1509,8 @@ u64 Compiler::enum_lookup(const goos::Object& form,
   if (e->is_bitfield()) {
     uint64_t value = 0;
     for_each_in_list(rest, [&](const goos::Object& o) {
-      auto kv = e->entries().find(symbol_string(o));
+      const auto test = symbol_string(o);
+      auto kv = e->entries().find(test);
       if (kv == e->entries().end()) {
         if (throw_on_error) {
           throw_compiler_error(form, "The value {} was not found in enum.", o.print());

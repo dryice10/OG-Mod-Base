@@ -1,5 +1,12 @@
 ;;-*-Lisp-*-
 (in-package goal)
+(bundles "FIC.DGO" "LAV.DGO" "MIS.DGO" "OGR.DGO" "ROL.DGO")
+
+(require "levels/racer_common/target-racer-h.gc")
+(require "engine/game/projectiles-h.gc")
+(require "levels/racer_common/racer.gc")
+(require "engine/target/logic-target.gc")
+(require "engine/game/effect-control.gc")
 
 ;; name: target-racer-FIC-LAV-MIS-OGR-ROL.gc
 ;; name in dgo: target-racer
@@ -844,8 +851,10 @@
         )
     )
   (when (or (not (cpad-hold? (-> self control unknown-cpad-info00 number) x))
-            (< (-> self control unknown-float01) 4096.0)
             (= (-> self racer boost-level) 0.0)
+            (and (< (-> self control unknown-float01) 4096.0)
+                (not (name= (-> *game-info* current-continue name) 'lavatube-citihops))
+                )
             )
     (when (nonzero? (-> self racer boost-sound-id))
       (let ((v1-241 (the-as sound-rpc-set-param (get-sound-buffer-entry))))

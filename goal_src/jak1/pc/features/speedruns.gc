@@ -1,6 +1,11 @@
 ;;-*-Lisp-*-
 (in-package goal)
 
+(require "engine/game/game-save.gc")
+(require "engine/game/task/game-task-h.gc")
+(require "pc/pckernel-common.gc")
+(require "pc/features/autosplit-h.gc")
+
 (define *speedrun-info* (new 'static 'speedrun-info-jak1 
     :should-display? #t 
     :should-display-idle-deload-info? #f 
@@ -14,6 +19,7 @@
 (define *practice-spawn-post-init* (the-as (function none) #f))
 
 (define *last-real-continue-point* (the-as continue-point #f))
+
 
 (define *hub1-cell-list* (new 'static 'boxed-array :type game-task
   (game-task training-gimmie)
@@ -806,6 +812,14 @@
   (none)
   )
 
+(defun speedrun-practice-citihops-start-run ()
+  (set! *practice-spawn-post-init* get-on-zoomer)
+  (initialize! *game-info* 'game (the-as game-save #f) "lavatube-citihops")
+  (set! (-> *game-info* current-continue) (get-continue-by-name *game-info* "lavatube-citihops"))
+  (speedrun-reset-common-settings)
+  (none)
+  )
+
 (defun speedrun-practice-FCS-start-run ()
   (initialize! *game-info* 'game (the-as game-save #f) "firecanyon-start")
   (set! (-> *game-info* current-continue) (get-continue-by-name *game-info* "firecanyon-start"))
@@ -999,6 +1013,9 @@
       )
     (((speedrun-practice-option lavawalk-3))
       (speedrun-practice-lavawalk-3-start-run)
+      )
+    (((speedrun-practice-option citihops))
+      (speedrun-practice-citihops-start-run)
       )
     (else
       (speedrun-practice-temp-checkpoint)

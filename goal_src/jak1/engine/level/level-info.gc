@@ -1,5 +1,11 @@
 ;;-*-Lisp-*-
 (in-package goal)
+(bundles "ENGINE.CGO" "GAME.CGO")
+
+(require "engine/math/quaternion-h.gc")
+(require "engine/math/vector-h.gc")
+(require "engine/level/level-h.gc")
+(require "engine/game/game-info-h.gc")
 
 ;; name: level-info.gc
 ;; name in dgo: level-info
@@ -1663,6 +1669,20 @@
         :quat (new 'static 'quaternion :y -0.7485 :w -0.663)
         :camera-trans (new 'static 'vector :x 9923721.0 :y 406466.16 :z -16541633.0 :w 1.0)
         :camera-rot (new 'static 'array float 9 -0.2191 0.0 -0.9756 0.1906 0.9807 -0.0428 0.9568 -0.1953 -0.2149)
+        :load-commands '()
+        :vis-nick 'lav
+        :lev0 'lavatube
+        :disp0 'display
+        :lev1 'citadel
+        :disp1 #f
+        )
+      (new 'static 'continue-point
+        :name "lavatube-citihops"
+        :level 'lavatube
+        :trans (new 'static 'vector :x (meters 2448.5368) :y (meters -12.0) :z (meters -4467.8535) :w 1.0)
+        :quat (new 'static 'quaternion :x 0.0000 :y 0.9245 :z 0.0000 :w 0.3811)
+        :camera-trans (new 'static 'vector :x (meters 2442.3911) :y (meters -6.3535) :z (meters -4464.5000) :w 1.0)
+        :camera-rot (new 'static 'array float 9 -0.5048 -0.0000 -0.8631 0.2355 0.9620 -0.1377 0.8304 -0.2729 -0.4857)
         :load-commands '()
         :vis-nick 'lav
         :lev0 'lavatube

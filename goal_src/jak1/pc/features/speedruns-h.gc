@@ -1,6 +1,9 @@
 ;;-*-Lisp-*-
 (in-package goal)
 
+(require "kernel-defs.gc")
+
+
 (defenum speedrun-category
   :type uint32
   ;; Main Categories
@@ -76,4 +79,5 @@
   (gondola-foot)
   (lavawalk-2)
   (lavawalk-3)
+  (citihops)
   )
