@@ -1,0 +1,88 @@
+(define button-choice (the uint32 0))
+(define button-locked? #f)
+(define mash-count 0.0)
+(define timestamp (get-current-time))
+(define mps1 0.0)
+(define mps2 0.0)
+(define mps5 0.0)
+
+
+(defun masher-repick () ;reset globals, unlock button choice
+  (set! button-choice (the uint32 0))
+  (set! button-locked? #f)
+  (set! mash-count 0.0)
+
+  (none)
+)
+
+
+(defun masher-idle () ;waiting for button choice
+  (when (not (zero? (cpad-pressed 0)))
+    (set! button-choice (the uint32 (cpad-pressed 0)))
+    (set! button-locked? #t)
+    (+! mash-count 1)
+    (set! timestamp (get-current-time))
+  )
+  (none)
+)
+
+
+(defun masher-mash ()
+  ;count mashing
+  (when (logtest? (cpad-pressed 0) button-choice)
+    (+! mash-count 1.0)
+  )
+  ;stats
+  (when (= (get-current-time) (+ timestamp (seconds 1)))
+    (set! mps1 (/ mash-count 1.0))
+  )
+  (when (= (get-current-time) (+ timestamp (seconds 2.5)))
+    (set! mps2 (/ mash-count 2.5))
+  )
+  (when (time-elapsed? timestamp (seconds 5))
+    (set! mps5 (/ mash-count 5.0))
+    ;reset to idle after 5 seconds
+    (masher-repick)
+  )
+  (none)
+)
+
+
+(defun masher-on ()
+  (when (not (process-by-name "masher" *active-pool*))
+  ;process-spawn-function, spawns a process that runs the function you give it
+  (process-spawn-function process :name "masher"
+    ;This lambda is our function
+    (lambda :behavior process ()
+    ;Code before the loop runs once on process spawn
+    ;
+      ;Loop runs once per frame while process is active
+      (loop
+        (if button-locked?
+          (masher-mash)
+          (masher-idle)
+        )
+
+        ;Start a bucket thing block so we can use draw functions
+        (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) global-buf)) (bucket-id debug-no-zbuf))
+          (draw-string-xy "Mash a button to start." testbuf 15 30 (the font-color 4) (font-flags shadow kerning))
+          (draw-string-xy (string-format "Mash count: ~f" mash-count ) testbuf 15 38 (the font-color 4) (font-flags shadow kerning))
+          (draw-string-xy (string-format "Average mash speed: ~f ~f ~f " mps1 mps2 mps5 ) testbuf 15 46 (the font-color 4) (font-flags shadow kerning))
+        )
+
+      ;Processes should suspend themselves, the loop will resume next frame
+      (suspend)
+      )
+
+    )
+  )
+  )  
+;Lisp returns the last form as the function return
+(none)
+)
+
+
+(defun masher-off ()
+  "Kill the process"
+  (kill-by-name "masher" *active-pool*)
+  )
