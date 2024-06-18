@@ -1,86 +1,133 @@
-(define button-choice (the uint32 0))
-(define button-locked? #f)
-(define mash-count 0.0)
-(define timestamp (get-current-time))
-(define mps1 0.0)
-(define mps2 0.0)
-(define mps5 0.0)
+;;(the masher (process-by-name "masher" *active-pool*))
+
+(deftype masher (process)
+  ((button-choice pad-buttons)
+  (mash-count float)
+  (timestamp time-frame)
+  (max-duration float)
+  (mps1 float)      
+  (mps-half float)  ;mashes per second after half of max-duration
+  (mps-full float)
+  (instruction string)
+  (bar-width int)
+   )
+  (:state-methods 
+    masher-done 
+    masher-start
+    masher-mash)
+  )
 
 
-(defun masher-repick () ;reset globals, unlock button choice
-  (set! button-choice (the uint32 0))
-  (set! button-locked? #f)
-  (set! mash-count 0.0)
-
-  (none)
-)
-
-
-(defun masher-idle () ;waiting for button choice
-  (when (not (zero? (cpad-pressed 0)))
-    (set! button-choice (the uint32 (cpad-pressed 0)))
-    (set! button-locked? #t)
-    (+! mash-count 1)
-    (set! timestamp (get-current-time))
+(defbehavior draw-text masher ()
+  (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) global-buf)) (bucket-id debug-no-zbuf))
+    (draw-string-xy (string-format "~s" (-> self instruction)) testbuf 15 30 (the font-color 4) (font-flags shadow kerning))
+    (draw-string-xy (string-format "Mash count: ~,,0f" (-> self mash-count)) testbuf 15 38 (the font-color 4) (font-flags shadow kerning))
+    (draw-string-xy (string-format "Mashes per sec: ~,,2f ~,,2f ~,,2f" (-> self mps1) (-> self mps-half) (-> self mps-full)) testbuf 15 46 (the font-color 4) (font-flags shadow kerning))
   )
   (none)
 )
 
-
-(defun masher-mash ()
-  ;count mashing
-  (when (logtest? (cpad-pressed 0) button-choice)
-    (+! mash-count 1.0)
-  )
-  ;stats
-  (when (= (get-current-time) (+ timestamp (seconds 1)))
-    (set! mps1 (/ mash-count 1.0))
-  )
-  (when (= (get-current-time) (+ timestamp (seconds 2.5)))
-    (set! mps2 (/ mash-count 2.5))
-  )
-  (when (time-elapsed? timestamp (seconds 5))
-    (set! mps5 (/ mash-count 5.0))
-    ;reset to idle after 5 seconds
-    (masher-repick)
+(defbehavior draw-bar masher ()
+  (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) global-buf)) (bucket-id debug-no-zbuf))
+    ;(draw-sprite2d-xy testbuf bar-x-pos bar-y-pos bar-w bar-h *color-black*)
+    (draw-sprite2d-xy testbuf 16 54 (+ (-> self bar-width) 2) 4 *color-black*) ;background bar
+    (draw-sprite2d-xy testbuf 17 55 (the int (lerp-scale 0.0 (the float (-> self bar-width)) ;big lerp for timer bar width
+        (the float (- (get-current-time) (-> self timestamp))) 0.0 (the float (seconds (-> self max-duration))))) 
+        2 *color-red*)
   )
   (none)
 )
+
+(defstate masher-done (masher)
+  :virtual #t
+  :enter (behavior () 
+    (set! (-> self instruction) "Press L2+X to restart.")
+    )
+  :code (behavior ()
+    (loop 
+      (draw-text)
+      (when (cpad-hold? 0 l2)
+        (when (cpad-pressed? 0 x)
+          (cpad-clear! 0 l2 x)    ;this fixes auto picking x in jak 1
+          (go-virtual masher-start)
+        )
+      )
+      (suspend))
+    )
+  :exit (behavior () (cpad-clear! 0 x)) ;this did not fix the bug in jak2
+  )
+
+(defstate masher-mash (masher)
+  :virtual #t
+  :enter (behavior () 
+    (set! (-> self instruction) "Keep mashing :)")
+    (set! (-> self timestamp) (get-current-time))
+    )
+  :code (behavior ()
+    (loop
+      (draw-text)
+      (draw-bar)
+      (when (logtest? (cpad-pressed 0) (-> self button-choice))
+        (+! (-> self mash-count) 1.0) ;count mash
+      )
+      ;calculate mash per second stats
+      (when (= (get-current-time) (+ (-> self timestamp) (seconds 1)))
+        (set! (-> self mps1) (/ (-> self mash-count) 1.0))
+      )
+      (when (= (get-current-time) (+ (-> self timestamp) (/ (seconds (-> self max-duration)) 2)))
+        (set! (-> self mps-half) (/ (-> self mash-count) (/ (-> self max-duration) 2.0)))
+      )
+      (when (time-elapsed? (-> self timestamp) (seconds (-> self max-duration)))
+        (set! (-> self mps-full) (/ (-> self mash-count) (-> self max-duration)))
+        ;go to done state after max duration
+        (go-virtual masher-done)
+      )
+      (suspend))
+    )
+  )
+
+(defstate masher-start (masher)
+  :virtual #t
+  :enter (behavior () 
+    (set! (-> self instruction) "Mash a button to start.")
+    (set! (-> self button-choice) (the pad-buttons 0))
+    (set! (-> self mash-count) 0.0)
+    (set! (-> self mps1) 0.0)      
+    (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-duration
+    (set! (-> self mps-full) 0.0)
+    (cpad-clear! 0 x)    ;this did not fix the bug in jak2
+    )
+  :code (behavior ()
+    (loop
+      (draw-text)
+      (when (not (zero? (cpad-pressed 0)))
+        (set! (-> self button-choice) (the pad-buttons (cpad-pressed 0)))
+        ;(+! (-> self mash-count) 1.0)
+        (set! (-> self instruction) "Mash a button to start.")
+        (go-virtual masher-mash)
+      )
+    (suspend))
+    )
+  )
+
+
+(defbehavior masher-init-by-other masher ()
+  (set! (-> self button-choice) (the pad-buttons 0))
+  (set! (-> self mash-count) 0.0)
+  (set! (-> self timestamp) 0)
+  (set! (-> self max-duration) 5.0)
+  (set! (-> self mps1) 0.0)      
+  (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-duration
+  (set! (-> self mps-full) 0.0) 
+  (set! (-> self bar-width) 140)
+  (go-virtual masher-start)
+  )
 
 
 (defun masher-on ()
-  (when (not (process-by-name "masher" *active-pool*))
-  ;process-spawn-function, spawns a process that runs the function you give it
-  (process-spawn-function process :name "masher"
-    ;This lambda is our function
-    (lambda :behavior process ()
-    ;Code before the loop runs once on process spawn
-    ;
-      ;Loop runs once per frame while process is active
-      (loop
-        (if button-locked?
-          (masher-mash)
-          (masher-idle)
-        )
-
-        ;Start a bucket thing block so we can use draw functions
-        (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) global-buf)) (bucket-id debug-no-zbuf))
-          (draw-string-xy "Mash a button to start." testbuf 15 30 (the font-color 4) (font-flags shadow kerning))
-          (draw-string-xy (string-format "Mash count: ~f" mash-count ) testbuf 15 38 (the font-color 4) (font-flags shadow kerning))
-          (draw-string-xy (string-format "Average mash speed: ~f ~f ~f " mps1 mps2 mps5 ) testbuf 15 46 (the font-color 4) (font-flags shadow kerning))
-        )
-
-      ;Processes should suspend themselves, the loop will resume next frame
-      (suspend)
-      )
-
-    )
-  )
-  )  
-;Lisp returns the last form as the function return
-(none)
+  (process-spawn masher)
+  (none)
 )
-
 
 (defun masher-off ()
   "Kill the process"
