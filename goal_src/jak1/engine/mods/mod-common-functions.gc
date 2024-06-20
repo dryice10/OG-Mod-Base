@@ -230,6 +230,10 @@
 
   (set! (-> *self-player-info* tgt_state)  (-> *target* state name))
 
+
+  (set! (-> *self-player-info* show_name) 1) ;;;; testing name
+
+
   (set! (-> *multiplayer-info* players (-> *multiplayer-info* player_num) username)       (-> *self-player-info* username))
   (set! (-> *multiplayer-info* players (-> *multiplayer-info* player_num) color)          (-> *self-player-info* color))
   (set! (-> *multiplayer-info* players (-> *multiplayer-info* player_num) trans_x)        (-> *target* root trans x))
@@ -241,6 +245,11 @@
   (set! (-> *multiplayer-info* players (-> *multiplayer-info* player_num) quat_w)         (-> *target* root quat w))
   (set! (-> *multiplayer-info* players (-> *multiplayer-info* player_num) zoomer_rot_y)   (-> *self-player-info* zoomer_rot_y))
   (set! (-> *multiplayer-info* players (-> *multiplayer-info* player_num) tgt_state)      (-> *target* state name))
+
+
+  (set! (-> *multiplayer-info* players (-> *multiplayer-info* player_num) show_name)      (-> *self-player-info* show_name)) ;;;; testing name
+
+
   (none)
   )
 
@@ -505,7 +514,8 @@
           )
 
         ;; draw usernames for all players
-        (add-text-3d
+        (if (= (-> p show_name) 1)
+          (add-text-3d
                       #t
                       (bucket-id subtitle)
                       (-> p username)
@@ -513,6 +523,8 @@
                       (font-color white)
                       (new 'static 'vector2h :y 16)
                       )
+          (none)
+          )
 
         ;; activate invuln for everyone and add nuka glitch for ghost targets
         (logior! (-> t state-flags) (state-flags invulnerable))

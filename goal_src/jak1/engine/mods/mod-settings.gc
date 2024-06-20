@@ -79,6 +79,9 @@ if the result of rand-vu-int-range is 1, then DANCE! if it is not 1, then Don't 
     (set! (-> obj tgt_state) 'invalid)
     (set! (-> obj cells_collected) 0)
     (set! (-> obj team_id) -1)
+
+    (set! (-> obj show_name) 1)
+
     obj
     )
   )

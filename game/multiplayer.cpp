@@ -243,7 +243,9 @@ void on_json_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg
               player->tgt_state = field.value();
             } else if (field.key().compare("mpState") == 0) {
               player->mp_state = field.value();
-            } 
+            } else if (field.key().compare("showname") == 0) {
+              player->show_name = field.value();
+            }
             else if (player->mp_state != 0 && field.key().compare("interaction") == 0) {
               //check if interaction available
               if (player->inter_type == 0) {
@@ -443,6 +445,10 @@ void send_position_update() {
       {"quatZ", gSelfPlayerInfo->quat_z},
       {"quatW", gSelfPlayerInfo->quat_w},
       {"rotY", gSelfPlayerInfo->zoomer_rot_y},
+
+      {"showname", gSelfPlayerInfo->show_name},
+
+
       {"currentLevel", gSelfPlayerInfo->current_level},
       {"tgtState", gSelfPlayerInfo->tgt_state},
       {"interType", gSelfPlayerInfo->inter_type},
@@ -463,6 +469,9 @@ void send_position_update() {
       {"quatZ", gSelfPlayerInfo->quat_z},
       {"quatW", gSelfPlayerInfo->quat_w},
       {"rotY", gSelfPlayerInfo->zoomer_rot_y},
+
+      {"showname", gSelfPlayerInfo->show_name},
+
       {"currentLevel", gSelfPlayerInfo->current_level},
       {"tgtState", gSelfPlayerInfo->tgt_state}
     };

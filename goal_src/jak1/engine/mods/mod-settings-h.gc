@@ -145,6 +145,8 @@
   (mp_state         mp-tgt-state) 
   (mp_state_check   mp-tgt-state) ;; used only on goal side, used to check if mp_state has changed
   
+  (show_name int32) ;; testing hiding names ;also adding to kernel_types.h
+
   ;; set from teamrun side
   (cells_collected int32)
   (player_index    int32)

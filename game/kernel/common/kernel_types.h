@@ -77,6 +77,8 @@ struct RemotePlayerInfo {
   s32 cells_collected;
   s32 player_index;
   s32 team_id;
+
+  s32 show_name; // testing hiding names ;also adding to mod-settings-h.gc 
 };
 
 struct InteractionInfo {
