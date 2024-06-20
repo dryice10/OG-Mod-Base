@@ -159,7 +159,7 @@
       (initialize! *game-info* 'game (the-as game-save #f) "jungle-start")
       )
     (((speedrun-category il-misty))
-      ;; spawn at start of misty     
+      ;; spawn at start of misty
       (initialize! *game-info* 'game (the-as game-save #f) "misty-start")
       )
     (((speedrun-category il-firecanyon))
@@ -242,7 +242,7 @@
   (set! (-> *setting-control* default auto-save) #t)
   (none)
   )
-  
+
 (defun setup-speedrun-post-blackout ()
   (when (and (-> *speedrun-info* needs-post-blackout-setup?) (>= (-> *display* base-frame-counter) (-> *game-info* blackout-time)))
     (set! (-> *speedrun-info* needs-post-blackout-setup?) #f)
@@ -451,7 +451,7 @@
              (-> *speedrun-info* should-display?))
     (with-dma-buffer-add-bucket ((buf (-> (current-frame) global-buf))
                                       (bucket-id subtitle))
-      (draw-string-xy (string-format "Speedrunner Mode ~%OpenGOAL Version: ~S ~%TR Client Version: ~S ~%Category: ~S ~%Cutscene Skips ~A"
+      (draw-string-xy (string-format "Speedrunner Mode ~%OpenGOAL Version: ~S ~%TR Client POOOP Version: ~S ~%Category: ~S ~%Cutscene Skips ~A"
                                      *pc-settings-built-sha*
                                      (-> *multiplayer-info* client_version)
                                      (enum->string speedrun-category (-> *speedrun-info* category))
