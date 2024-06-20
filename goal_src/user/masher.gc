@@ -3,13 +3,16 @@
 (deftype masher (process)
   ((button-choice pad-buttons)
   (mash-count float)
-  (timestamp time-frame)
-  (max-duration float)
-  (mps1 float)      
-  (mps-half float)  ;mashes per second after half of max-duration
+  (state-time time-frame)
+  (max-time float)
+  (mps1 float)      ;mashes after 1 second
+  (mps-half float)  ;mashes per second after half of max-time
   (mps-full float)
   (instruction string)
+  (bar-x int)
+  (bar-y int)
   (bar-width int)
+  (bar-height int)
    )
   (:state-methods 
     masher-done 
@@ -30,10 +33,12 @@
 (defbehavior draw-bar masher ()
   (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) global-buf)) (bucket-id debug-no-zbuf))
     ;(draw-sprite2d-xy testbuf bar-x-pos bar-y-pos bar-w bar-h *color-black*)
-    (draw-sprite2d-xy testbuf 16 54 (+ (-> self bar-width) 2) 4 *color-black*) ;background bar
-    (draw-sprite2d-xy testbuf 17 55 (the int (lerp-scale 0.0 (the float (-> self bar-width)) ;big lerp for timer bar width
-        (the float (- (get-current-time) (-> self timestamp))) 0.0 (the float (seconds (-> self max-duration))))) 
-        2 *color-red*)
+    (draw-sprite2d-xy testbuf (-> self bar-x) (-> self bar-y)     ;background bar
+        (+ (-> self bar-width) 2) 
+        (-> self bar-height) *color-black*) 
+    (draw-sprite2d-xy testbuf (+ (-> self bar-x) 1) (+ (-> self bar-y) 1) (the int (lerp-scale 0.0 (the float (-> self bar-width)) ;big lerp for timer bar width
+        (the float (- (get-current-time) (-> self state-time))) 0.0 (the float (seconds (-> self max-time))))) 
+        (- (-> self bar-height) 2) *color-red*)
   )
   (none)
 )
@@ -48,20 +53,21 @@
       (draw-text)
       (when (cpad-hold? 0 l2)
         (when (cpad-pressed? 0 x)
-          (cpad-clear! 0 l2 x)    ;this fixes auto picking x in jak 1
+          ;(cpad-clear! 0 l2 x)    ;this fixes auto picking x in jak 1
+          (when (cpad-hold? 0 x)   ;fixes auto picking x in both games
+            (suspend))
           (go-virtual masher-start)
         )
       )
       (suspend))
     )
-  :exit (behavior () (cpad-clear! 0 x)) ;this did not fix the bug in jak2
   )
 
 (defstate masher-mash (masher)
   :virtual #t
   :enter (behavior () 
     (set! (-> self instruction) "Keep mashing :)")
-    (set! (-> self timestamp) (get-current-time))
+    (set! (-> self state-time) (get-current-time))
     )
   :code (behavior ()
     (loop
@@ -71,14 +77,14 @@
         (+! (-> self mash-count) 1.0) ;count mash
       )
       ;calculate mash per second stats
-      (when (= (get-current-time) (+ (-> self timestamp) (seconds 1)))
+      (when (= (get-current-time) (+ (-> self state-time) (seconds 1)))
         (set! (-> self mps1) (/ (-> self mash-count) 1.0))
       )
-      (when (= (get-current-time) (+ (-> self timestamp) (/ (seconds (-> self max-duration)) 2)))
-        (set! (-> self mps-half) (/ (-> self mash-count) (/ (-> self max-duration) 2.0)))
+      (when (= (get-current-time) (+ (-> self state-time) (/ (seconds (-> self max-time)) 2)))
+        (set! (-> self mps-half) (/ (-> self mash-count) (/ (-> self max-time) 2.0)))
       )
-      (when (time-elapsed? (-> self timestamp) (seconds (-> self max-duration)))
-        (set! (-> self mps-full) (/ (-> self mash-count) (-> self max-duration)))
+      (when (time-elapsed? (-> self state-time) (seconds (-> self max-time)))
+        (set! (-> self mps-full) (/ (-> self mash-count) (-> self max-time)))
         ;go to done state after max duration
         (go-virtual masher-done)
       )
@@ -93,16 +99,14 @@
     (set! (-> self button-choice) (the pad-buttons 0))
     (set! (-> self mash-count) 0.0)
     (set! (-> self mps1) 0.0)      
-    (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-duration
+    (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-time
     (set! (-> self mps-full) 0.0)
-    (cpad-clear! 0 x)    ;this did not fix the bug in jak2
     )
   :code (behavior ()
     (loop
       (draw-text)
       (when (not (zero? (cpad-pressed 0)))
         (set! (-> self button-choice) (the pad-buttons (cpad-pressed 0)))
-        ;(+! (-> self mash-count) 1.0)
         (set! (-> self instruction) "Mash a button to start.")
         (go-virtual masher-mash)
       )
@@ -114,12 +118,15 @@
 (defbehavior masher-init-by-other masher ()
   (set! (-> self button-choice) (the pad-buttons 0))
   (set! (-> self mash-count) 0.0)
-  (set! (-> self timestamp) 0)
-  (set! (-> self max-duration) 5.0)
+  (set! (-> self state-time) 0)
+  (set! (-> self max-time) 5.0)
   (set! (-> self mps1) 0.0)      
-  (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-duration
+  (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-time
   (set! (-> self mps-full) 0.0) 
+  (set! (-> self bar-x) 16)
+  (set! (-> self bar-y) 55)
   (set! (-> self bar-width) 140)
+  (set! (-> self bar-height) 4)
   (go-virtual masher-start)
   )
 
