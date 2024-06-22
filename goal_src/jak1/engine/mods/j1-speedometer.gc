@@ -1,4 +1,4 @@
-(define show-speedometer? #f)
+(define *show-speedometer?* #f)
 
 (defun j1-speedometer-on ()
   (when (not (process-by-name 'j1-speedometer *active-pool*))
@@ -8,6 +8,7 @@
     (lambda :behavior process ()
     ;Code before the loop runs once on process spawn
     ;
+    (set! *show-speedometer?* #t)
     (let ((bar-x-pos 4)
          (bar-y-pos 110)
         (bar-w 87)
@@ -61,5 +62,6 @@
 
 (defun j1-speedometer-off ()
   "Kill the process"
+  (set! show-speedometer? #f)
   (kill-by-name 'j1-speedometer *active-pool*)
   )
