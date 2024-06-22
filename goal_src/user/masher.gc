@@ -17,6 +17,7 @@
   (:state-methods 
     masher-done 
     masher-start
+    masher-hover-start
     masher-mash)
   )
 
@@ -37,7 +38,7 @@
         (+ (-> self bar-width) 2) 
         (-> self bar-height) *color-black*) 
     (draw-sprite2d-xy testbuf (+ (-> self bar-x) 1) (+ (-> self bar-y) 1) (the int (lerp-scale 0.0 (the float (-> self bar-width)) ;big lerp for timer bar width
-        (the float (- (get-current-time) (-> self state-time))) 0.0 (the float (seconds (-> self max-time))))) 
+        (the float (- (get-current-time) (-> self state-time))) (the float (seconds (-> self max-time)))  0.0)) 
         (- (-> self bar-height) 2) *color-red*)
   )
   (none)
@@ -52,11 +53,18 @@
     (loop 
       (draw-text)
       (when (cpad-hold? 0 l2)
+        ;L2 + x to restart and pick a button
         (when (cpad-pressed? 0 x)
           ;(cpad-clear! 0 l2 x)    ;this fixes auto picking x in jak 1
           (when (cpad-hold? 0 x)   ;fixes auto picking x in both games
             (suspend))
           (go-virtual masher-start)
+        )
+        ;L2 + L1 to lock button to L1
+        (when (cpad-pressed? 0 l1)
+          (when (cpad-hold? 0 l1)
+            (suspend))      ;fixes auto picking
+          (go-virtual masher-hover-start)
         )
       )
       (suspend))
@@ -108,6 +116,26 @@
       (when (not (zero? (cpad-pressed 0)))
         (set! (-> self button-choice) (the pad-buttons (cpad-pressed 0)))
         (set! (-> self instruction) "Mash a button to start.")
+        (go-virtual masher-mash)
+      )
+    (suspend))
+    )
+  )
+
+(defstate masher-hover-start (masher)
+  :virtual #t
+  :enter (behavior () 
+    (set! (-> self instruction) "Mash L1 to start")
+    (set! (-> self button-choice) (the pad-buttons 1024)) ;; sets button to L1
+    (set! (-> self mash-count) 0.0)
+    (set! (-> self mps1) 0.0)      
+    (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-time
+    (set! (-> self mps-full) 0.0)
+    )
+  :code (behavior ()
+    (loop
+      (draw-text)
+      (when (cpad-pressed? 0 l1)
         (go-virtual masher-mash)
       )
     (suspend))
