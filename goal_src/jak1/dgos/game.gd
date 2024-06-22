@@ -204,6 +204,7 @@
   "pckernel-common.o" ;; added
   "pckernel.o" ;; added
   "input-display.o" ;;added
+  "j1-speedometer.o" ;;added
   "mood-tables.o"
   "mood.o"
   "weather-part.o"

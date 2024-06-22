@@ -2104,6 +2104,7 @@
 
 (goal-src "engine/mods/input-display.gc")
 (goal-src "engine/mods/orb-placer.gc")
+(goal-src "engine/mods/j1-speedometer.gc")
 
 
 (goal-src-sequence
