@@ -2103,6 +2103,7 @@
 (goal-src "pc/debug/pc-debug-methods.gc" "pc-debug-common")
 
 (goal-src "engine/mods/input-display.gc")
+(goal-src "engine/mods/masher.gc")
 (goal-src "engine/mods/orb-placer.gc")
 
 

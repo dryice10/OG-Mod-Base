@@ -1,0 +1,174 @@
+;;(the masher (process-by-name "masher" *active-pool*))
+
+(define *masher-on?* #f)
+
+(deftype masher (process)
+  ((button-choice pad-buttons)
+  (mash-count float)
+  (state-time time-frame)
+  (max-time float)
+  (mps1 float)      ;mashes after 1 second
+  (mps-half float)  ;mashes per second after half of max-time
+  (mps-full float)
+  (instruction string)
+  (bar-x int)
+  (bar-y int)
+  (bar-width int)
+  (bar-height int)
+   )
+  (:state-methods 
+    masher-done 
+    masher-start
+    masher-hover-start
+    masher-mash)
+  )
+
+
+(defbehavior draw-text masher ()
+  (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) global-buf)) (bucket-id debug-no-zbuf))
+    (draw-string-xy (string-format "~s" (-> self instruction)) testbuf 15 30 (the font-color 4) (font-flags shadow kerning))
+    (draw-string-xy (string-format "Mash count: ~,,0f" (-> self mash-count)) testbuf 15 38 (the font-color 4) (font-flags shadow kerning))
+    (draw-string-xy (string-format "Mashes per sec: ~,,2f ~,,2f ~,,2f" (-> self mps1) (-> self mps-half) (-> self mps-full)) testbuf 15 46 (the font-color 4) (font-flags shadow kerning))
+  )
+  (none)
+)
+
+(defbehavior draw-bar masher ()
+  (with-dma-buffer-add-bucket ((testbuf (-> (current-frame) global-buf)) (bucket-id debug-no-zbuf))
+    ;(draw-sprite2d-xy testbuf bar-x-pos bar-y-pos bar-w bar-h *color-black*)
+    (draw-sprite2d-xy testbuf (-> self bar-x) (-> self bar-y)     ;background bar
+        (+ (-> self bar-width) 2) 
+        (-> self bar-height) *color-black*) 
+    (draw-sprite2d-xy testbuf (+ (-> self bar-x) 1) (+ (-> self bar-y) 1) (the int (lerp-scale 0.0 (the float (-> self bar-width)) ;big lerp for timer bar width
+        (the float (- (get-current-time) (-> self state-time))) (the float (seconds (-> self max-time)))  0.0)) 
+        (- (-> self bar-height) 2) *color-red*)
+  )
+  (none)
+)
+
+(defstate masher-done (masher)
+  :virtual #t
+  :enter (behavior () 
+    (set! (-> self instruction) "Press L2+X to restart.")
+    )
+  :code (behavior ()
+    (loop 
+      (draw-text)
+      (when (cpad-hold? 0 l2)
+        ;L2 + x to restart and pick a button
+        (when (cpad-pressed? 0 x)
+          ;(cpad-clear! 0 l2 x)    ;this fixes auto picking x in jak 1
+          (when (cpad-hold? 0 x)   ;fixes auto picking x in both games
+            (suspend))
+          (go-virtual masher-start)
+        )
+        ;L2 + L1 to lock button to L1
+        (when (cpad-pressed? 0 l1)
+          (when (cpad-hold? 0 l1)
+            (suspend))      ;fixes auto picking
+          (go-virtual masher-hover-start)
+        )
+      )
+      (suspend))
+    )
+  )
+
+(defstate masher-mash (masher)
+  :virtual #t
+  :enter (behavior () 
+    (set! (-> self instruction) "Keep mashing :)")
+    (set! (-> self state-time) (get-current-time))
+    )
+  :code (behavior ()
+    (loop
+      (draw-text)
+      (draw-bar)
+      (when (logtest? (cpad-pressed 0) (-> self button-choice))
+        (+! (-> self mash-count) 1.0) ;count mash
+      )
+      ;calculate mash per second stats
+      (when (= (get-current-time) (+ (-> self state-time) (seconds 1)))
+        (set! (-> self mps1) (/ (-> self mash-count) 1.0))
+      )
+      (when (= (get-current-time) (+ (-> self state-time) (/ (seconds (-> self max-time)) 2)))
+        (set! (-> self mps-half) (/ (-> self mash-count) (/ (-> self max-time) 2.0)))
+      )
+      (when (time-elapsed? (-> self state-time) (seconds (-> self max-time)))
+        (set! (-> self mps-full) (/ (-> self mash-count) (-> self max-time)))
+        ;go to done state after max duration
+        (go-virtual masher-done)
+      )
+      (suspend))
+    )
+  )
+
+(defstate masher-start (masher)
+  :virtual #t
+  :enter (behavior () 
+    (set! (-> self instruction) "Mash a button to start.")
+    (set! (-> self button-choice) (the pad-buttons 0))
+    (set! (-> self mash-count) 0.0)
+    (set! (-> self mps1) 0.0)      
+    (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-time
+    (set! (-> self mps-full) 0.0)
+    )
+  :code (behavior ()
+    (loop
+      (draw-text)
+      (when (not (zero? (cpad-pressed 0)))
+        (set! (-> self button-choice) (the pad-buttons (cpad-pressed 0)))
+        (set! (-> self instruction) "Mash a button to start.")
+        (go-virtual masher-mash)
+      )
+    (suspend))
+    )
+  )
+
+(defstate masher-hover-start (masher)
+  :virtual #t
+  :enter (behavior () 
+    (set! (-> self instruction) "Mash L1 to start")
+    (set! (-> self button-choice) (the pad-buttons 1024)) ;; sets button to L1
+    (set! (-> self mash-count) 0.0)
+    (set! (-> self mps1) 0.0)      
+    (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-time
+    (set! (-> self mps-full) 0.0)
+    )
+  :code (behavior ()
+    (loop
+      (draw-text)
+      (when (cpad-pressed? 0 l1)
+        (go-virtual masher-mash)
+      )
+    (suspend))
+    )
+  )
+
+
+(defbehavior masher-init-by-other masher ()
+  (set! (-> self button-choice) (the pad-buttons 0))
+  (set! (-> self mash-count) 0.0)
+  (set! (-> self state-time) 0)
+  (set! (-> self max-time) 5.0)
+  (set! (-> self mps1) 0.0)      
+  (set! (-> self mps-half) 0.0)  ;mashes per second after half of max-time
+  (set! (-> self mps-full) 0.0) 
+  (set! (-> self bar-x) 16)
+  (set! (-> self bar-y) 55)
+  (set! (-> self bar-width) 140)
+  (set! (-> self bar-height) 4)
+  (go-virtual masher-start)
+  )
+
+
+(defun masher-on ()
+  (set! *masher-on?* #t)
+  (process-spawn masher)
+  (none)
+)
+
+(defun masher-off ()
+  "Kill the process"
+  (set! *masher-on?* #f)
+  (kill-by-name "masher" *active-pool*)
+  )
