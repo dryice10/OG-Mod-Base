@@ -62,6 +62,6 @@
 
 (defun j1-speedometer-off ()
   "Kill the process"
-  (set! show-speedometer? #f)
+  (set! *show-speedometer?* #f)
   (kill-by-name 'j1-speedometer *active-pool*)
   )

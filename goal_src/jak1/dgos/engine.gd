@@ -207,8 +207,9 @@
   "speedruns.o" ;; added
   "pckernel-common.o" ;; added
   "pckernel.o" ;; added
-  "input-display.o" ;;added
-  "j1-speedometer.o" ;;added
+  "input-display.o" ;; added
+  "j1-speedometer.o" ;; added
+  "masher.o" ;; added
   "mood-tables.o"
   "mood.o"
   "weather-part.o"
