@@ -26,9 +26,9 @@
           (draw-sprite2d-xy testbuf (+ 1 bar-x-pos) (+ 1 bar-y-pos) 
             (the int (/ (vector-xz-length jak-velocity) 2048)) (- bar-h 2) bar-color) ;speed bar
               
-          (draw-string-xy-scaled (string-format "XZ V: ~M" (vector-xz-length jak-velocity))
+          (draw-string-xy-scaled (string-format "XZ V: ~,,2M" (vector-xz-length jak-velocity))
               testbuf (+ 2 bar-x-pos) (+ 1 bar-y-pos) (the font-color 12) (font-flags shadow kerning) 0.5)
-          (draw-string-xy-scaled (string-format "XYZ V: ~M" (vector-length jak-velocity))
+          (draw-string-xy-scaled (string-format "XYZ V: ~,,2M" (vector-length jak-velocity))
               testbuf (+ 1 bar-x-pos) (+ 7 bar-y-pos) (the font-color 12) (font-flags shadow kerning) 0.5)
 
           (cond

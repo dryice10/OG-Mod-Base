@@ -65,17 +65,23 @@ Down lets you edit buttons, left lets you edit the sticks, right for dpad, up to
 (defun draw-other-buttons ((arg0 dma-buffer))
     ;LR/Shoulder buttons
     (when (cpad-hold? 0 r1)
-        (draw-string-xy "R1" arg0 (+ (-> button-origin x) (-> r1-offset x)) (+ (-> button-origin y) (-> r1-offset y)) (the font-color 13) (font-flags shadow kerning)) )
+        (draw-sprite2d-xy arg0 (+ (-> button-origin x) (-> r1-offset x)) (+ (-> button-origin y) (-> r1-offset y)) 12 8 *color-black*) ;background bar
+        (draw-string-xy "R1" arg0 (+ (-> button-origin x) (-> r1-offset x)) (+ (-> button-origin y) (-> r1-offset y)) (the font-color 1) (font-flags shadow kerning)) )
     (when (cpad-hold? 0 r2)
-        (draw-string-xy "R2" arg0 (+ (-> button-origin x) (-> r2-offset x)) (+ (-> button-origin y) (-> r2-offset y)) (the font-color 13) (font-flags shadow kerning)) )
+        (draw-sprite2d-xy arg0 (+ (-> button-origin x) (-> r2-offset x)) (+ (-> button-origin y) (-> r2-offset y)) 14 8 *color-black*) ;background bar
+        (draw-string-xy "R2" arg0 (+ (-> button-origin x) (-> r2-offset x)) (+ (-> button-origin y) (-> r2-offset y)) (the font-color 1) (font-flags shadow kerning)) )
     (when (cpad-hold? 0 r3)
-        (draw-string-xy "R3" arg0 (+ (-> button-origin x) (-> r3-offset x)) (+ (-> button-origin y) (-> r3-offset y)) (the font-color 13) (font-flags shadow kerning)) )
+        (draw-sprite2d-xy arg0 (+ (-> button-origin x) (-> r3-offset x)) (+ (-> button-origin y) (-> r3-offset y)) 12 8 *color-black*)
+        (draw-string-xy "R3" arg0 (+ (-> button-origin x) (-> r3-offset x)) (+ (-> button-origin y) (-> r3-offset y)) (the font-color 1) (font-flags shadow kerning)) )
     (when (cpad-hold? 0 l1)
-        (draw-string-xy "L1" arg0 (+ (-> button-origin x) (-> l1-offset x)) (+ (-> button-origin y) (-> l1-offset y)) (the font-color 13) (font-flags shadow kerning)) )
+        (draw-sprite2d-xy arg0 (+ (-> button-origin x) (-> l1-offset x)) (+ (-> button-origin y) (-> l1-offset y)) 12 8 *color-black*)
+        (draw-string-xy "L1" arg0 (+ (-> button-origin x) (-> l1-offset x)) (+ (-> button-origin y) (-> l1-offset y)) (the font-color 1) (font-flags shadow kerning)) )
     (when (cpad-hold? 0 l2)
-        (draw-string-xy "L2" arg0 (+ (-> button-origin x) (-> l2-offset x)) (+ (-> button-origin y) (-> l2-offset y)) (the font-color 13) (font-flags shadow kerning)) )
+        (draw-sprite2d-xy arg0 (+ (-> button-origin x) (-> l2-offset x)) (+ (-> button-origin y) (-> l2-offset y)) 14 8 *color-black*)
+        (draw-string-xy "L2" arg0 (+ (-> button-origin x) (-> l2-offset x)) (+ (-> button-origin y) (-> l2-offset y)) (the font-color 1) (font-flags shadow kerning)) )
     (when (cpad-hold? 0 l3)
-        (draw-string-xy "L3" arg0 (+ (-> button-origin x) (-> l3-offset x)) (+ (-> button-origin y) (-> l3-offset y)) (the font-color 13) (font-flags shadow kerning)) )
+        (draw-sprite2d-xy arg0 (+ (-> button-origin x) (-> l3-offset x)) (+ (-> button-origin y) (-> l3-offset y)) 12 8 *color-black*)
+        (draw-string-xy "L3" arg0 (+ (-> button-origin x) (-> l3-offset x)) (+ (-> button-origin y) (-> l3-offset y)) (the font-color 1) (font-flags shadow kerning)) )
 
     ;Select/Start, aligned with L3/R3
     (when (cpad-hold? 0 start)
@@ -139,10 +145,15 @@ Down lets you edit buttons, left lets you edit the sticks, right for dpad, up to
         *color-gray*)
   
       ;Text for stick values
-      (draw-string-xy-scaled (string-format "~d  ~d" (-> *cpad-list* cpads 0 leftx) (-> *cpad-list* cpads 0 lefty)) arg0 
+      (draw-string-xy-scaled (string-format "~d  ~d" (-> *cpad-list* cpads 0 leftx) (-> *cpad-list* cpads 0 lefty) (-> *cpad-list* cpads 0 stick0-speed)) arg0 
         (+ (-> stick-origin x) (-> stick-text-offset x))
         (+ (-> stick-origin y) (-> stick-text-offset y))
         (font-color green) (font-flags shadow kerning ) 0.75)
+      ;text for stick0-speed
+      (draw-string-xy-scaled (string-format "~,,2f" (-> *cpad-list* cpads 0 stick0-speed)) arg0 
+        (+ (-> stick-origin x) (-> stick-text-offset x))
+        (+ (-> stick-origin y) (-> stick-text-offset y) 29)
+        (font-color green) (font-flags shadow kerning ) 0.5)
       
       ;raw stick location, nice for locating screen coordinates
       ;(draw-sprite2d-xy testbuf (the int (-> *cpad-list* cpads 0 leftx)) (the int(-> *cpad-list* cpads 0 lefty)) 5 3 *color-red*)
