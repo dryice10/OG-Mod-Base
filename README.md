@@ -1,3 +1,8 @@
+
+### Controller input visualization with frame counts.
+
+https://github.com/user-attachments/assets/4c7d3af8-a37b-4b40-8b0c-c9b7c72f50f9
+
 # Jak Speedrunning Practice (OpenGOAL)
 
 ## Jak 1
